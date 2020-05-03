@@ -20,11 +20,11 @@ setup(
     install_requires=[
         "deprecated",
         "furl>=2.0.0",
-        "pytz",
         "requests>=2.22.0",
         "simplejson>=3.16.0",
     ],
     extras_require={
+        "pytz": ["pytz"],
         "yaml": ["pyyaml>=5.1"],
     },
     classifiers=[
