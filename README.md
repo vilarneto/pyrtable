@@ -8,7 +8,7 @@ Pyrtable is a high-level, ORM-like library that hides all these details. It perf
 
 ## What does it look like?
 
-Ok, let's have a taste of how one can define a class that maps into records of a table:
+Ok, let's have a taste of how one can define a class that maps onto records of a table:
 
 ````python
 import enum
