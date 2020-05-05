@@ -1,7 +1,7 @@
 .. _Field classes:
 
-Using field classes
-===================
+Field classes
+=============
 
 Field classes are used to declare properties that map onto Airtable fields (columns). You instantiate field classes when :ref:`defining your record classes <Record classes>`, providing the corresponding Airtable field name as the first argument – see the example below::
 
