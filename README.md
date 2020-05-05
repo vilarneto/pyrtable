@@ -107,9 +107,9 @@ Pyrtable also has some extra tools to cache data and read authentication keys fr
 
 Pyrtable is compatible with Python 3.7 and 3.8. Previous 3.x versions may or may not work. Python 2.x is not supported at all. 
 
-## Technical documentation?
+## Documentation
 
-Ok, you got me. You can inspect `pyrtable.fields` to see all available fields and guess filter syntax from `pyrtable/filters/q.py`. I'd really appreciate some collaboration to create a decent documentation!
+Technical documentation is available at https://pyrtable.readthedocs.io.
 
 ## Questions, bug reports, improvements
 
