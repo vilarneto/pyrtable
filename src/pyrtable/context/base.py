@@ -24,6 +24,8 @@ class BaseContext:
         with get_connection_manager():
             response = requests.get(url, headers=headers)
             if 400 <= response.status_code < 500:
+                from pyrtable.record import BaseRecord
+
                 error = response.json().get('error', {})
 
                 if error == 'NOT_FOUND':
@@ -59,6 +61,8 @@ class BaseContext:
             with get_connection_manager():
                 response = requests.get(f.url, headers=headers)
                 if 400 <= response.status_code < 500:
+                    from pyrtable.record import BaseRecord
+
                     error = response.json().get('error', {})
                     error_message = error.get('message', '')
                     error_type = error.get('type', '')
@@ -89,6 +93,8 @@ class BaseContext:
         with get_connection_manager():
             response = requests.post(url, headers=headers, data=json.dumps(data))
             if 400 <= response.status_code < 500:
+                from pyrtable.record import BaseRecord
+
                 error = response.json().get('error', {})
                 error_message = error.get('message', '')
                 error_type = error.get('type', '')
@@ -114,6 +120,8 @@ class BaseContext:
         with get_connection_manager():
             response = requests.patch(url, headers=headers, data=json.dumps(data))
             if 400 <= response.status_code < 500:
+                from pyrtable.record import BaseRecord
+
                 error = response.json().get('error', {})
                 error_message = error.get('message', '')
                 error_type = error.get('type', '')
@@ -149,6 +157,8 @@ class BaseContext:
         with get_connection_manager():
             response = requests.delete(url, headers=headers)
             if 400 <= response.status_code < 500:
+                from pyrtable.record import BaseRecord
+
                 error = response.json().get('error', {})
                 error_message = error.get('message', '')
                 error_type = error.get('type', '')
