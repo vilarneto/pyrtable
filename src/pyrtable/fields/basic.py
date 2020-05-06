@@ -69,6 +69,13 @@ class DateTimeField(BaseField):
     def encode_to_airtable(self, value):
         if value is None:
             return None
+
+        if pytz is not None:
+            value = value.astimezone(pytz.UTC)
+        elif value.tzinfo is not None:
+            import sys
+            print('Warning: Using timezone-aware datetime values require the pytz package', file=sys.stderr)
+
         return format(value, '%Y-%m-%dT%H:%M:%S.%fZ')
 
 
