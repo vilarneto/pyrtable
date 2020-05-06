@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Type, Iterator, Optional, Union, Dict, Iterable
+from ..exceptions import RequestError
 
 
 try:
@@ -24,8 +25,6 @@ class BaseContext:
         with get_connection_manager():
             response = requests.get(url, headers=headers)
             if 400 <= response.status_code < 500:
-                from pyrtable.record import BaseRecord
-
                 error = response.json().get('error', {})
 
                 if error == 'NOT_FOUND':
@@ -34,7 +33,7 @@ class BaseContext:
                 error_message = error.get('message', '')
                 error_type = error.get('type', '')
 
-                raise BaseRecord.RequestError(message=error_message, type=error_type)
+                raise RequestError(message=error_message, type=error_type)
 
         record_data = response.json()
         record = record_cls()
@@ -61,13 +60,11 @@ class BaseContext:
             with get_connection_manager():
                 response = requests.get(f.url, headers=headers)
                 if 400 <= response.status_code < 500:
-                    from pyrtable.record import BaseRecord
-
                     error = response.json().get('error', {})
                     error_message = error.get('message', '')
                     error_type = error.get('type', '')
 
-                    raise BaseRecord.RequestError(message=error_message, type=error_type)
+                    raise RequestError(message=error_message, type=error_type)
 
             response_json = response.json()
             for record_data in response_json.get('records', []):
@@ -93,13 +90,11 @@ class BaseContext:
         with get_connection_manager():
             response = requests.post(url, headers=headers, data=json.dumps(data))
             if 400 <= response.status_code < 500:
-                from pyrtable.record import BaseRecord
-
                 error = response.json().get('error', {})
                 error_message = error.get('message', '')
                 error_type = error.get('type', '')
 
-                raise BaseRecord.RequestError(message=error_message, type=error_type)
+                raise RequestError(message=error_message, type=error_type)
 
         record.consume_airtable_data(response.json())
 
@@ -120,13 +115,11 @@ class BaseContext:
         with get_connection_manager():
             response = requests.patch(url, headers=headers, data=json.dumps(data))
             if 400 <= response.status_code < 500:
-                from pyrtable.record import BaseRecord
-
                 error = response.json().get('error', {})
                 error_message = error.get('message', '')
                 error_type = error.get('type', '')
 
-                raise BaseRecord.RequestError(message=error_message, type=error_type)
+                raise RequestError(message=error_message, type=error_type)
 
         # noinspection PyProtectedMember
         record._clear_dirty_fields()
@@ -157,13 +150,11 @@ class BaseContext:
         with get_connection_manager():
             response = requests.delete(url, headers=headers)
             if 400 <= response.status_code < 500:
-                from pyrtable.record import BaseRecord
-
                 error = response.json().get('error', {})
                 error_message = error.get('message', '')
                 error_type = error.get('type', '')
 
-                raise BaseRecord.RequestError(message=error_message, type=error_type)
+                raise RequestError(message=error_message, type=error_type)
 
         if record is not None:
             record._id = None
@@ -230,6 +221,8 @@ class SimpleCachingContext(BaseContext):
 
     def delete(self, record_cls: Type['BaseRecord'], record: Union['BaseRecord', str]) -> None:
         if self._is_cached_class(record_cls):
+            from pyrtable.record import BaseRecord
+
             if isinstance(record, BaseRecord):
                 record_id = record.id
             else:

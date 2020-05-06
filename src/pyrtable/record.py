@@ -116,11 +116,6 @@ class _BaseRecordPrototype:
 
 
 class BaseRecord(_BaseRecordPrototype):
-    class RequestError(Exception):
-        def __init__(self, message, type):
-            self.type = type
-            super().__init__(message)
-
     _ATTRIBUTE_NOT_SPECIFIED = object()
 
     _id: Optional[str] = None
