@@ -6,7 +6,7 @@ with open("README.md", 'r') as f:
 
 setup(
     name='pyrtable',
-    version='0.5.5',
+    version='0.5.6',
     packages=find_packages('src'),
     package_dir={'': 'src'},
     url='https://github.com/vilarneto/pyrtable.git',
