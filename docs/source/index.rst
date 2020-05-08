@@ -1,3 +1,6 @@
+.. meta::
+    :google-site-verification: ekqMuH2ZeE9B-jc0KO_OeftLa8EMDz1j1Mt4-Fi-4Ao
+
 Welcome to Pyrtable's documentation!
 ====================================
 

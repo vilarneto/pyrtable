@@ -261,6 +261,12 @@ class MultipleRecordLinkField(BaseRecordLinkField):
     def validate(self, value: Optional[Union[_RecordLinkCollection, Iterable[Any]]]) -> Any:
         if isinstance(value, _RecordLinkCollection):
             return _RecordLinkCollection(value)
+        if isinstance(value, collections.abc.Iterable):
+            result = _RecordLinkCollection(fetcher=self._fetcher)
+            for record_id in value or []:
+                result += record_id
+            return result
+
         return super().validate(value)
 
     def clone_value(self, value: _RecordLinkCollection) -> _RecordLinkCollection:
