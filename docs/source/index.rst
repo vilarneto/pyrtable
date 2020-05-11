@@ -12,6 +12,7 @@ Welcome to Pyrtable's documentation!
    record
    fields
    fetchsave
+   caching
 
 Pyrtable is a Python 3 library to interface with Airtable_'s REST API.
 

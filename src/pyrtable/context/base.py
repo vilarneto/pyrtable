@@ -10,7 +10,7 @@ except ImportError:
 
 if TYPE_CHECKING:
     from pyrtable.filters.base import BaseFilter
-    from pyrtable.record import BaseRecord
+    from pyrtable.record import BaseRecord, RecordQuery
 
 
 # noinspection PyMethodMayBeStatic
@@ -189,6 +189,22 @@ class SimpleCachingContext(BaseContext):
         if self._allow_classes is not None:
             return record_cls in self._allow_classes
         return True
+
+    def pre_cache(self, *args: Union['BaseRecord', 'RecordQuery', Type['BaseRecord']]):
+        import inspect
+        from pyrtable.record import BaseRecord, RecordQuery
+
+        for arg in args:
+            if isinstance(arg, BaseRecord) and arg.id is not None:
+                with self._cache_lock:
+                    self._cache[self._build_key(arg.__class__, arg.id)] = arg
+            elif isinstance(arg, RecordQuery):
+                # This will fetch and cache records
+                list(arg)
+            elif inspect.isclass(arg) and issubclass(arg, BaseRecord):
+                list(arg.objects.all())
+            else:
+                raise ValueError(arg)
 
     def fetch_single(self, record_cls: Type['BaseRecord'], record_id: str) -> 'BaseRecord':
         if not self._is_cached_class(record_cls):
