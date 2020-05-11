@@ -1,6 +1,6 @@
 import unittest
 
-from pyrtable.fields import IntegerField, FloatField, StringField
+from pyrtable.fields import IntegerField, FloatField, StringField, MultipleSelectionField
 from pyrtable.filters import Q
 from pyrtable.record import BaseRecord
 
@@ -9,6 +9,7 @@ class TestRecord(BaseRecord):
     int_field = IntegerField('Integer Field')
     float_field = FloatField('Float Field')
     string_field = StringField('String Field')
+    multi_sel_field = MultipleSelectionField('MultiSel Field')
 
 
 class QTests(unittest.TestCase):
@@ -42,6 +43,12 @@ class QTests(unittest.TestCase):
             flt = Q(**{'int_field__%s' % filter_cls: 15})
             self.assertEqual(flt.build_formula(TestRecord),
                              "{Integer Field}%s15" % operator)
+
+    def test_multiple_selection_filters(self):
+        self.assertEqual(Q(multi_sel_field__contains='Value').build_formula(TestRecord),
+                         'FIND(", "&"Value"&", ",", "&{MultiSel Field}&", ")>0')
+        self.assertEqual(Q(multi_sel_field__excludes='Value').build_formula(TestRecord),
+                         'FIND(", "&"Value"&", ",", "&{MultiSel Field}&", ")=0')
 
     def test_and_filter(self):
         flt = Q(int_field=15) & Q(float_field=2.5)

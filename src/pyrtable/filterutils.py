@@ -75,12 +75,12 @@ def airtable_filter_less_than_or_equals(column_name, value) -> str:
 
 
 def airtable_filter_multiple_select_contains(column_name, value):
-    return 'FIND({value}&", ",{column_name}&", ")>0'.format(
+    return 'FIND(", "&{value}&", ",", "&{column_name}&", ")>0'.format(
         column_name=quote_column_name(column_name), value=quote_value(value))
 
 
 def airtable_filter_multiple_select_does_not_contain(column_name, value):
-    return 'FIND({value}&", ",{column_name}&", ")=0'.format(
+    return 'FIND(", "&{value}&", ",", "&{column_name}&", ")=0'.format(
         column_name=quote_column_name(column_name), value=quote_value(value))
 
 

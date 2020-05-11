@@ -184,9 +184,11 @@ Pyrtable also creates a companion property with ``'_ids'`` suffix that holds a c
 ``MultipleSelectionField``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:class:: class MultipleSelectionField(field_name, choices, **options)
+.. py:class:: class MultipleSelectionField(field_name, choices=None, **options)
 
 Holds zero or more values from a predefined set (Airtable calls it a “Multiple select” field) that is mapped onto a Python enum (a subclass of :py:class:`enum.Enum`). The enum class is given as a second argument named ``choices`` — check :py:class:`SingleSelectionField` for a detailed description and examples.
+
+If ``choices`` is not given or is ``None``, the field maps values into strings.
 
 .. warning::
 

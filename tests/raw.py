@@ -1,6 +1,6 @@
 import unittest
 
-from pyrtable.fields import IntegerField, FloatField, StringField, BooleanField
+from pyrtable.fields import IntegerField, FloatField, StringField, BooleanField, MultipleSelectionField
 from pyrtable.filters.raw import *
 from pyrtable.filterutils import quote_value
 from pyrtable.record import BaseRecord
@@ -11,6 +11,7 @@ class TestRecord(BaseRecord):
     float_field = FloatField('Float Field')
     string_field = StringField('String Field')
     boolean_field = BooleanField('Boolean Field')
+    multi_sel_field = MultipleSelectionField('MultiSel Field')
 
 
 class RawFilterFormulaTests(unittest.TestCase):
@@ -45,6 +46,12 @@ class RawFilterFormulaTests(unittest.TestCase):
                          "{Float Field}!=2.5")
         self.assertEqual(NotEqualsFilter('string_field', "String").build_formula(TestRecord),
                          '{String Field}!="String"')
+
+    def test_multiple_selection_filters(self):
+        self.assertEqual(ContainsFilter('multi_sel_field', 'Value').build_formula(TestRecord),
+                         'FIND(", "&"Value"&", ",", "&{MultiSel Field}&", ")>0')
+        self.assertEqual(DoesNotContainFilter('multi_sel_field', 'Value').build_formula(TestRecord),
+                         'FIND(", "&"Value"&", ",", "&{MultiSel Field}&", ")=0')
 
     def test_comparison_filters(self):
         pairs = [
