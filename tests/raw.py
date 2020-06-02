@@ -1,6 +1,8 @@
+import datetime
 import unittest
 
-from pyrtable.fields import IntegerField, FloatField, StringField, BooleanField, MultipleSelectionField
+from pyrtable.fields import IntegerField, FloatField, StringField, BooleanField, DateField, DateTimeField,\
+    MultipleSelectionField
 from pyrtable.filters.raw import *
 from pyrtable.filterutils import quote_value
 from pyrtable.record import BaseRecord
@@ -20,6 +22,9 @@ class RawFilterFormulaTests(unittest.TestCase):
         self.assertEqual(quote_value(""), '""')
         self.assertEqual(quote_value(False), 'FALSE()')
         self.assertEqual(quote_value(True), 'TRUE()')
+        self.assertEqual(quote_value(datetime.date(2020, 1, 5)), '"2020-01-05"')
+        self.assertEqual(quote_value(datetime.datetime(2020, 1, 5, 10, 20, 40, 123456)),
+                         '"2020-01-05T10:20:40.123456Z"')
 
     def test_boolean_filters(self):
         self.assertEqual(TrueFilter().build_formula(TestRecord),

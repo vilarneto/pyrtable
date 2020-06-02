@@ -7,6 +7,8 @@ def quote_column_name(column_name: str) -> str:
 
 
 def quote_value(value) -> str:
+    import datetime
+
     if isinstance(value, str):
         return '"%s"' % re.sub(r'(["\'\\])', lambda ch: '\\' + ch.group(0), value)
     if isinstance(value, bool):
@@ -15,6 +17,10 @@ def quote_value(value) -> str:
         return str(value)
     if isinstance(value, Enum):
         return quote_value(value.value)
+    if isinstance(value, datetime.datetime):
+        return format(value, '"%Y-%m-%dT%H:%M:%S.%fZ"')
+    if isinstance(value, datetime.date):
+        return format(value, '"%Y-%m-%d"')
     raise ValueError(value)
 
 

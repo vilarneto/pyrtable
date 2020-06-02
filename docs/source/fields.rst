@@ -44,7 +44,7 @@ Field types
 ``AttachmentField``
 ^^^^^^^^^^^^^^^^^^^
 
-.. py:class:: class AttachmentField(field_name, read_only=True, **options)
+.. class:: class AttachmentField(field_name, read_only=True, **options)
 
 .. note::
 
@@ -94,7 +94,7 @@ This property follows :py:class:`collections.abc.Sized` and :py:class:`collectio
 ``BooleanField``
 ^^^^^^^^^^^^^^^^
 
-.. py:class:: class BooleanField(field_name, **options)
+.. class:: class BooleanField(field_name, **options)
 
 Holds a :py:class:`bool` value. This field never holds ``None``, as empty values are mapped to ``False``.
 
@@ -103,7 +103,7 @@ Holds a :py:class:`bool` value. This field never holds ``None``, as empty values
 ``DateField``
 ^^^^^^^^^^^^^
 
-.. py:class:: class DateField(field_name, **options)
+.. class:: class DateField(field_name, **options)
 
 Holds a :py:class:`datetime.date` value.
 
@@ -112,7 +112,7 @@ Holds a :py:class:`datetime.date` value.
 ``DateTimeField``
 ^^^^^^^^^^^^^^^^^
 
-.. py:class:: class DateTimeField(field_name, **options)
+.. class:: class DateTimeField(field_name, **options)
 
 Holds a :py:class:`datetime.datetime` value. If `the pytz package <https://pypi.org/project/pytz/>`_ is installed, values will be timezone aware.
 
@@ -121,7 +121,7 @@ Holds a :py:class:`datetime.datetime` value. If `the pytz package <https://pypi.
 ``FloatField``
 ^^^^^^^^^^^^^^
 
-.. py:class:: class FloatField(field_name, **options)
+.. class:: class FloatField(field_name, **options)
 
 Holds a :py:class:`float` value.
 
@@ -130,7 +130,7 @@ Holds a :py:class:`float` value.
 ``IntegerField``
 ^^^^^^^^^^^^^^^^
 
-.. py:class:: class IntegerField(field_name, **options)
+.. class:: class IntegerField(field_name, **options)
 
 Holds an :py:class:`int` value.
 
@@ -139,7 +139,7 @@ Holds an :py:class:`int` value.
 ``MultipleRecordLinkField``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:class:: class MultipleRecordLinkField(field_name, linked_class, **options)
+.. class:: class MultipleRecordLinkField(field_name, linked_class, **options)
 
 Holds zero or more record references, possibly from another Airtable table. ``linked_class`` is either the record class (i.e., a :class:`BaseRecord` subclass) or a string containing full Python module path to that class (e.g., ``'mypackage.mymodule.MyTableRecord'``).
 
@@ -184,7 +184,7 @@ Pyrtable also creates a companion property with ``'_ids'`` suffix that holds a c
 ``MultipleSelectionField``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:class:: class MultipleSelectionField(field_name, choices=None, **options)
+.. class:: class MultipleSelectionField(field_name, choices=None, **options)
 
 Holds zero or more values from a predefined set (Airtable calls it a “Multiple select” field) that is mapped onto a Python enum (a subclass of :py:class:`enum.Enum`). The enum class is given as a second argument named ``choices`` — check :py:class:`SingleSelectionField` for a detailed description and examples.
 
@@ -225,7 +225,7 @@ Notice that the last method accepts an iterable, such as lists, tuples, and sets
 ``SingleRecordLinkField``
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:class:: class SingleRecordLinkField(field_name, linked_class, **options)
+.. class:: class SingleRecordLinkField(field_name, linked_class, **options)
 
 Holds a reference to another record, possibly from another Airtable table. ``linked_class`` is either the record class (i.e., a :class:`BaseRecord` subclass) or a string containing full Python module path to that class (e.g., ``'mypackage.mymodule.MyTableRecord'``).
 
@@ -244,7 +244,7 @@ Accessing the property at runtime is an expensive operation for the first time, 
 ``SingleSelectionField``
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. py:class:: class SingleSelectionField(field_name, choices, **options)
+.. class:: class SingleSelectionField(field_name, choices, **options)
 
 Holds a single value from a predefined set (Airtable calls it a “Single select” field) that is mapped onto a Python enum (a subclass of :py:class:`enum.Enum`). The enum class is given as a second argument named ``choices`` — see below::
 
@@ -261,6 +261,6 @@ Holds a single value from a predefined set (Airtable calls it a “Single select
 ``StringField``
 ^^^^^^^^^^^^^^^
 
-.. py:class:: class StringField(field_name, **options)
+.. class:: class StringField(field_name, **options)
 
 Holds a :py:class:`str` value. Unlike other field types, this field never holds ``None``; nonexistent values are always translated into empty strings.

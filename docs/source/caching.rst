@@ -53,7 +53,7 @@ Controlling which tables are cached
 
 Caching all tables may be too much depending on your scenario. This default behaviour can be tuned using constructor arguments for the :class:`SimpleCachingContext` class:
 
-.. py:class:: class SimpleCachingContext(allow_classes=None, exclude_classes=None)
+.. class:: class SimpleCachingContext(allow_classes=None, exclude_classes=None)
 
 ``allow_classes``, if specified, is a list of record classes that will always be cached. Any classes not listed will not be cached.
 
