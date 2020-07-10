@@ -21,7 +21,7 @@ def get_config_dirs() -> List[str]:
         if _config_dirs is None:
             home_dir = os.path.expanduser('~')
             _config_dirs = [
-                os.path.join(os.path.abspath('.'), 'config'),
+                os.path.join(os.getcwd(), 'config'),
                 os.path.join(home_dir, '.config', 'airtable'),
                 '/etc/airtable']
 
