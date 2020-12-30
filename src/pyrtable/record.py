@@ -21,6 +21,11 @@ if TYPE_CHECKING:
     from .filters.base import BaseFilter
 
 
+def encode_table_id(table_id: str) -> str:
+    import urllib.parse
+    return urllib.parse.quote(table_id)
+
+
 class _MetaManager:
     table_tag: str = None
     base_tag: str = None
@@ -53,9 +58,15 @@ class _MetaManager:
 
 
 class RecordQuery(collections.abc.Iterable):
+    _base_id: Optional[str] = None
+    _table_id: Optional[str] = None
+
     def __init__(self, record_class, flt: Optional['BaseFilter'] = None):
         self._record_class = record_class
         self._filter = flt
+
+    def all(self) -> 'RecordQuery':
+        return self
 
     def filter(self, *args, **kwargs) -> 'RecordQuery':
         from .filters import Q
@@ -69,9 +80,18 @@ class RecordQuery(collections.abc.Iterable):
 
         return self
 
+    def set_base_id(self, base_id: str) -> 'RecordQuery':
+        self._base_id = base_id
+        return self
+
+    def set_table_id(self, table_id: str) -> 'RecordQuery':
+        self._table_id = table_id
+        return self
+
     def __iter__(self) -> Iterator['BaseRecord']:
         from pyrtable.context import get_default_context
-        yield from get_default_context().fetch_many(self._record_class, self._filter)
+        yield from get_default_context().fetch_many(
+            self._record_class, self._filter, base_id=self._base_id, table_id=self._table_id)
 
 
 class _ObjectsManager:
@@ -88,9 +108,16 @@ class _ObjectsManager:
         record_query_cls = self._record_class._get_meta_attr('record_query_class', RecordQuery)
         return record_query_cls(record_class=self._record_class, flt=Q(*args, **kwargs))
 
-    def get(self, record_id: str) -> 'BaseRecord':
+    def get(self, record_id: str, base_id: Optional[str] = None, table_id: Optional[str] = None) -> 'BaseRecord':
         from pyrtable.context import get_default_context
-        return get_default_context().fetch_single(self._record_class, record_id)
+        return get_default_context().fetch_single(
+            self._record_class, record_id, base_id=base_id, table_id=table_id)
+
+    def set_base_id(self, base_id: str) -> RecordQuery:
+        return self.all().set_base_id(base_id)
+
+    def set_table_id(self, table_id: str) -> RecordQuery:
+        return self.all().set_table_id(table_id)
 
 
 class _ObjectsManagerWrapper:
@@ -291,13 +318,21 @@ class BaseRecord(_BaseRecordPrototype):
         return cls._get_meta_attr('table_id')
 
     @classmethod
-    def get_encoded_table_id(cls) -> str:
-        import urllib.parse
-        return urllib.parse.quote(cls.get_table_id())
+    def get_url(cls,
+                record_id: Optional[str] = None,
+                base_id: Optional[str] = None,
+                table_id: Optional[str] = None) -> str:
+        if base_id is None:
+            base_id = cls.get_base_id()
+        if base_id is None:
+            raise ValueError('base_id is None')
 
-    @classmethod
-    def get_url(cls, record_id: Optional[str] = None) -> str:
-        url = 'https://api.airtable.com/v0/%s/%s' % (cls.get_base_id(), cls.get_encoded_table_id())
+        if table_id is None:
+            table_id = cls.get_table_id()
+        if table_id is None:
+            raise ValueError('table_id is None')
+
+        url = 'https://api.airtable.com/v0/%s/%s' % (base_id, encode_table_id(table_id))
         if record_id is not None:
             url += '/%s' % record_id
         return url

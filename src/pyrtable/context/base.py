@@ -15,12 +15,17 @@ if TYPE_CHECKING:
 
 # noinspection PyMethodMayBeStatic
 class BaseContext:
-    def fetch_single(self, record_cls: Type['BaseRecord'], record_id: str) -> 'BaseRecord':
+    def fetch_single(self,
+                     record_cls: Type['BaseRecord'],
+                     record_id: str,
+                     base_id: Optional[str] = None,
+                     table_id: Optional[str] = None) \
+            -> 'BaseRecord':
         import requests
         from pyrtable.connectionmanager import get_connection_manager
 
         headers = record_cls.get_request_headers()
-        url = record_cls.get_url(record_id=record_id)
+        url = record_cls.get_url(record_id=record_id, base_id=base_id, table_id=table_id)
 
         with get_connection_manager():
             response = requests.get(url, headers=headers)
@@ -40,14 +45,18 @@ class BaseContext:
         record.consume_airtable_data(record_data)
         return record
 
-    def fetch_many(self, record_cls: Type['BaseRecord'], record_filter: Optional['BaseFilter'] = None) \
+    def fetch_many(self,
+                   record_cls: Type['BaseRecord'],
+                   record_filter: Optional['BaseFilter'] = None,
+                   base_id: Optional[str] = None,
+                   table_id: Optional[str] = None) \
             -> Iterator['BaseRecord']:
         import requests
         from furl import furl
         from pyrtable.connectionmanager import get_connection_manager
 
         headers = record_cls.get_request_headers()
-        f = furl(record_cls.get_url())
+        f = furl(record_cls.get_url(base_id=base_id, table_id=table_id))
         if record_filter:
             filter_by_formula = record_filter.build_formula(record_cls)
             if filter_by_formula:
@@ -77,11 +86,15 @@ class BaseContext:
                 break
             f.args['offset'] = offset
 
-    def _create(self, record_cls: Type['BaseRecord'], record: 'BaseRecord') -> None:
+    def _create(self,
+                record_cls: Type['BaseRecord'],
+                record: 'BaseRecord',
+                base_id: Optional[str] = None,
+                table_id: Optional[str] = None) -> None:
         import requests
         from pyrtable.connectionmanager import get_connection_manager
 
-        url = record_cls.get_url()
+        url = record_cls.get_url(base_id=base_id, table_id=table_id)
         headers = record_cls.get_request_headers({
             'Content-Type': 'application/json',
         })
@@ -98,7 +111,11 @@ class BaseContext:
 
         record.consume_airtable_data(response.json())
 
-    def _update(self, record_cls: Type['BaseRecord'], record: 'BaseRecord') -> None:
+    def _update(self,
+                record_cls: Type['BaseRecord'],
+                record: 'BaseRecord',
+                base_id: Optional[str] = None,
+                table_id: Optional[str] = None) -> None:
         import requests
         from pyrtable.connectionmanager import get_connection_manager
 
@@ -106,7 +123,7 @@ class BaseContext:
         if not dirty_fields:
             return
 
-        url = record_cls.get_url(record.id)
+        url = record_cls.get_url(record.id, base_id=base_id, table_id=table_id)
         headers = record_cls.get_request_headers({
             'Content-Type': 'application/json',
         })
@@ -124,16 +141,24 @@ class BaseContext:
         # noinspection PyProtectedMember
         record._clear_dirty_fields()
 
-    def save(self, record_cls: Type['BaseRecord'], record: 'BaseRecord') -> None:
+    def save(self,
+             record_cls: Type['BaseRecord'],
+             record: 'BaseRecord',
+             base_id: Optional[str] = None,
+             table_id: Optional[str] = None) -> None:
         """
         Save the record to Airtable.
         """
         if record.id is None:
-            self._create(record_cls, record)
+            self._create(record_cls, record, base_id=base_id, table_id=table_id)
         else:
-            self._update(record_cls, record)
+            self._update(record_cls, record, base_id=base_id, table_id=table_id)
 
-    def delete(self, record_cls: Type['BaseRecord'], record: Union['BaseRecord', str]) -> None:
+    def delete(self,
+               record_cls: Type['BaseRecord'],
+               record: Union['BaseRecord', str],
+               base_id: Optional[str] = None,
+               table_id: Optional[str] = None) -> None:
         import requests
         from pyrtable.connectionmanager import get_connection_manager
         from pyrtable.record import BaseRecord
@@ -144,7 +169,7 @@ class BaseContext:
             record_id = record
             record = None
 
-        url = record_cls.get_url(record_id)
+        url = record_cls.get_url(record_id, base_id=base_id, table_id=table_id)
         headers = record_cls.get_request_headers()
 
         with get_connection_manager():
@@ -206,9 +231,14 @@ class SimpleCachingContext(BaseContext):
             else:
                 raise ValueError(arg)
 
-    def fetch_single(self, record_cls: Type['BaseRecord'], record_id: str) -> 'BaseRecord':
+    def fetch_single(self,
+                     record_cls: Type['BaseRecord'],
+                     record_id: str,
+                     base_id: Optional[str] = None,
+                     table_id: Optional[str] = None) -> 'BaseRecord':
         if not self._is_cached_class(record_cls):
-            return super(SimpleCachingContext, self).fetch_single(record_cls=record_cls, record_id=record_id)
+            return super(SimpleCachingContext, self).fetch_single(
+                record_cls=record_cls, record_id=record_id, base_id=base_id, table_id=table_id)
 
         key = self._build_key(record_cls, record_id)
         with self._cache_lock:
@@ -216,26 +246,40 @@ class SimpleCachingContext(BaseContext):
         if record is not None:
             return record
 
-        record = super(SimpleCachingContext, self).fetch_single(record_cls=record_cls, record_id=record_id)
+        record = super(SimpleCachingContext, self).fetch_single(
+            record_cls=record_cls, record_id=record_id, base_id=base_id, table_id=table_id)
         with self._cache_lock:
             self._cache[key] = record
         return record
 
-    def fetch_many(self, record_cls: Type['BaseRecord'], record_filter: Optional['BaseFilter'] = None) \
+    def fetch_many(self,
+                   record_cls: Type['BaseRecord'],
+                   record_filter: Optional['BaseFilter'] = None,
+                   base_id: Optional[str] = None,
+                   table_id: Optional[str] = None) \
             -> Iterator['BaseRecord']:
-        for record in super(SimpleCachingContext, self).fetch_many(record_cls, record_filter):
+        for record in super(SimpleCachingContext, self).fetch_many(
+                record_cls, record_filter, base_id=base_id, table_id=table_id):
             if self._is_cached_class(record_cls):
                 with self._cache_lock:
                     self._cache[self._build_key(record_cls, record.id)] = record
             yield record
 
-    def save(self, record_cls: Type['BaseRecord'], record: 'BaseRecord') -> None:
-        super(SimpleCachingContext, self).save(record_cls, record)
+    def save(self,
+             record_cls: Type['BaseRecord'],
+             record: 'BaseRecord',
+             base_id: Optional[str] = None,
+             table_id: Optional[str] = None) -> None:
+        super(SimpleCachingContext, self).save(record_cls, record, base_id=base_id, table_id=table_id)
         if self._is_cached_class(record_cls):
             with self._cache_lock:
                 self._cache[self._build_key(record_cls, record.id)] = record
 
-    def delete(self, record_cls: Type['BaseRecord'], record: Union['BaseRecord', str]) -> None:
+    def delete(self,
+               record_cls: Type['BaseRecord'],
+               record: Union['BaseRecord', str],
+               base_id: Optional[str] = None,
+               table_id: Optional[str] = None) -> None:
         if self._is_cached_class(record_cls):
             from pyrtable.record import BaseRecord
 
@@ -247,7 +291,7 @@ class SimpleCachingContext(BaseContext):
                 with self._cache_lock:
                     self._cache.pop(self._build_key(record_cls, record_id), None)
 
-        super(SimpleCachingContext, self).delete(record_cls, record)
+        super(SimpleCachingContext, self).delete(record_cls, record, base_id=base_id, table_id=table_id)
 
 
 __all__ = ['BaseContext', 'SimpleCachingContext']
