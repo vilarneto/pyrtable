@@ -37,6 +37,7 @@ class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
                     module = __import__(module_name, fromlist=[class_name])
                     linked_class = getattr(module, class_name)
 
+                # @TODO Does not work with set_base_id()
                 return linked_class.objects.get(record_id=linked_record_id)
 
         self._fetcher = fetcher

@@ -146,6 +146,8 @@ class BaseRecord(_BaseRecordPrototype):
     _ATTRIBUTE_NOT_SPECIFIED = object()
 
     _id: Optional[str] = None
+    _base_id: Optional[str] = None
+    _table_id: Optional[str] = None
     _created_timestamp: Optional[datetime.datetime] = None
 
     meta = _MetaManager()
@@ -188,9 +190,11 @@ class BaseRecord(_BaseRecordPrototype):
 
         return instance
 
-    def __init__(self, **kwargs):
+    def __init__(self, _base_id: Optional[str] = None, _table_id: Optional[str] = None, **kwargs):
         self._fields_values = {}
         self._orig_fields_values = {}
+        self._base_id = _base_id
+        self._table_id = _table_id
 
         for attr_name, field in self.iter_fields():
             self._fields_values[attr_name] = field.decode_from_airtable(None)
@@ -232,14 +236,14 @@ class BaseRecord(_BaseRecordPrototype):
 
     def delete(self):
         from pyrtable.context import get_default_context
-        get_default_context().delete(self.__class__, self)
+        get_default_context().delete(self.__class__, self, base_id=self._base_id, table_id=self._table_id)
 
     def save(self) -> None:
         """
         Save the record to Airtable.
         """
         from pyrtable.context import get_default_context
-        get_default_context().save(self.__class__, self)
+        get_default_context().save(self.__class__, self, base_id=self._base_id, table_id=self._table_id)
 
     def encode_to_airtable(self, include_non_dirty_fields=False) -> Dict[str, Any]:
         result = {}
@@ -275,13 +279,25 @@ class BaseRecord(_BaseRecordPrototype):
         return '<%s (%s)>' % (self.__class__.__name__, self.id)
 
     @classmethod
-    def get_request_headers(cls, defaults=None) -> Dict[str, str]:
+    def get_request_headers(cls, defaults=None, base_id: Optional[str] = None) -> Dict[str, str]:
         if not defaults:
             defaults = {}
         result = dict(**defaults)
 
         if hasattr(cls, 'get_api_key'):
-            result['Authorization'] = 'Bearer %s' % cls.get_api_key()
+            function = cls.get_api_key
+
+            if base_id is not None:
+                import functools
+                import inspect
+
+                signature = inspect.signature(function)
+                if 'base_id' in signature.parameters:
+                    function = functools.partial(function, base_id=base_id)
+                else:
+                    raise ValueError('Cannot use base_id')
+
+            result['Authorization'] = 'Bearer %s' % function()
         else:
             result['Authorization'] = 'Bearer %s' % cls._get_meta_attr('api_key')
 
@@ -342,7 +358,7 @@ class APIKeyFromSecretsFileMixin:
     AIRTABLE_SECRETS_FILENAME = 'airtable_secrets.yaml'
 
     @classmethod
-    def get_api_key(cls):
+    def get_api_key(cls, base_id=None):
         if not issubclass(cls, BaseRecord):
             raise AttributeError('This is a mixin for BaseRecord subclasses')
 
@@ -350,7 +366,9 @@ class APIKeyFromSecretsFileMixin:
 
         cls: Union[BaseRecord, APIKeyFromSecretsFileMixin]
 
-        base_id = cls.get_base_id()
+        if base_id is None:
+            base_id = cls.get_base_id()
+
         all_api_keys = load_config_file(cls.AIRTABLE_SECRETS_FILENAME)
         return all_api_keys[base_id]
 

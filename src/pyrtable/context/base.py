@@ -24,7 +24,7 @@ class BaseContext:
         import requests
         from pyrtable.connectionmanager import get_connection_manager
 
-        headers = record_cls.get_request_headers()
+        headers = record_cls.get_request_headers(base_id=base_id)
         url = record_cls.get_url(record_id=record_id, base_id=base_id, table_id=table_id)
 
         with get_connection_manager():
@@ -41,7 +41,7 @@ class BaseContext:
                 raise RequestError(message=error_message, type=error_type)
 
         record_data = response.json()
-        record = record_cls()
+        record = record_cls(_base_id=base_id, _table_id=table_id)
         record.consume_airtable_data(record_data)
         return record
 
@@ -55,7 +55,7 @@ class BaseContext:
         from furl import furl
         from pyrtable.connectionmanager import get_connection_manager
 
-        headers = record_cls.get_request_headers()
+        headers = record_cls.get_request_headers(base_id=base_id)
         f = furl(record_cls.get_url(base_id=base_id, table_id=table_id))
         if record_filter:
             filter_by_formula = record_filter.build_formula(record_cls)
@@ -77,7 +77,7 @@ class BaseContext:
 
             response_json = response.json()
             for record_data in response_json.get('records', []):
-                record = record_cls()
+                record = record_cls(_base_id=base_id, _table_id=table_id)
                 record.consume_airtable_data(record_data)
                 yield record
 
@@ -97,7 +97,7 @@ class BaseContext:
         url = record_cls.get_url(base_id=base_id, table_id=table_id)
         headers = record_cls.get_request_headers({
             'Content-Type': 'application/json',
-        })
+        }, base_id=base_id)
         data = {'fields': record.encode_to_airtable()}
 
         with get_connection_manager():
@@ -126,7 +126,7 @@ class BaseContext:
         url = record_cls.get_url(record.id, base_id=base_id, table_id=table_id)
         headers = record_cls.get_request_headers({
             'Content-Type': 'application/json',
-        })
+        }, base_id=base_id)
         data = {'fields': dirty_fields}
 
         with get_connection_manager():
@@ -170,7 +170,7 @@ class BaseContext:
             record = None
 
         url = record_cls.get_url(record_id, base_id=base_id, table_id=table_id)
-        headers = record_cls.get_request_headers()
+        headers = record_cls.get_request_headers(base_id=base_id)
 
         with get_connection_manager():
             response = requests.delete(url, headers=headers)
