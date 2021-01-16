@@ -10,17 +10,23 @@ except ImportError:
 
 if TYPE_CHECKING:
     from pyrtable.filters.base import BaseFilter
-    from pyrtable.record import BaseRecord, RecordQuery
+    from pyrtable.record import BaseRecord
+    from ..query import RecordQuery
+    from .._baseandtable import _BaseAndTablePrototype
 
 
 # noinspection PyMethodMayBeStatic
 class BaseContext:
-    def fetch_single(self, record_cls: Type['BaseRecord'], record_id: str) -> 'BaseRecord':
+    def fetch_single(self, *,
+                     record_cls: Type['BaseRecord'],
+                     record_id: str,
+                     base_and_table: '_BaseAndTablePrototype') \
+            -> 'BaseRecord':
         import requests
         from pyrtable.connectionmanager import get_connection_manager
 
-        headers = record_cls.get_request_headers()
-        url = record_cls.get_url(record_id=record_id)
+        headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
+        url = base_and_table.build_url(record_id=record_id)
 
         with get_connection_manager():
             response = requests.get(url, headers=headers)
@@ -36,29 +42,42 @@ class BaseContext:
                 raise RequestError(message=error_message, type=error_type)
 
         record_data = response.json()
-        record = record_cls()
+        record = record_cls(_base_id=base_and_table.base_id, _table_id=base_and_table.table_id)
         record.consume_airtable_data(record_data)
         return record
 
-    def fetch_many(self, record_cls: Type['BaseRecord'], record_filter: Optional['BaseFilter'] = None) \
+    def fetch_many(self, *,
+                   record_cls: Type['BaseRecord'],
+                   base_and_table: '_BaseAndTablePrototype',
+                   record_filter: Optional['BaseFilter'] = None) \
             -> Iterator['BaseRecord']:
+        import urllib.parse
         import requests
-        from furl import furl
+        # from furl import furl
         from pyrtable.connectionmanager import get_connection_manager
 
-        headers = record_cls.get_request_headers()
-        f = furl(record_cls.get_url())
+        headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
+        url = base_and_table.build_url()
+        parsed_url = urllib.parse.urlparse(url)
+        url_query_params = urllib.parse.parse_qsl(parsed_url.query, keep_blank_values=True)
+        # f = furl(url)
+
         if record_filter:
             filter_by_formula = record_filter.build_formula(record_cls)
             if filter_by_formula:
-                f.args['filterByFormula'] = filter_by_formula
+                # f.args['filterByFormula'] = filter_by_formula
+                url_query_params.append(('filterByFormula', filter_by_formula))
 
         column_names = record_cls.get_column_names()
-        f.args['fields[]'] = column_names
+        # f.args['fields[]'] = column_names
+        url_query_params.extend(('fields[]', column_name) for column_name in column_names)
+
+        # noinspection PyProtectedMember
+        parsed_url = parsed_url._replace(query=urllib.parse.urlencode(url_query_params))
 
         while True:
             with get_connection_manager():
-                response = requests.get(f.url, headers=headers)
+                response = requests.get(parsed_url.geturl(), headers=headers)
                 if 400 <= response.status_code < 500:
                     error = response.json().get('error', {})
                     error_message = error.get('message', '')
@@ -68,23 +87,29 @@ class BaseContext:
 
             response_json = response.json()
             for record_data in response_json.get('records', []):
-                record = record_cls()
+                record = record_cls(_base_id=base_and_table.base_id, _table_id=base_and_table.table_id)
                 record.consume_airtable_data(record_data)
                 yield record
 
             offset = response_json.get('offset')
             if offset is None:
                 break
-            f.args['offset'] = offset
 
-    def _create(self, record_cls: Type['BaseRecord'], record: 'BaseRecord') -> None:
+            # f.args['offset'] = offset
+            url_query_params['offset'] = offset
+            # noinspection PyProtectedMember
+            parsed_url = parsed_url._replace(query=urllib.parse.urlencode(url_query_params))
+
+    def _create(self,
+                record_cls: Type['BaseRecord'],
+                record: 'BaseRecord') -> None:
         import requests
         from pyrtable.connectionmanager import get_connection_manager
 
-        url = record_cls.get_url()
+        url = record.build_url()
         headers = record_cls.get_request_headers({
             'Content-Type': 'application/json',
-        })
+        }, base_id=record.base_id)
         data = {'fields': record.encode_to_airtable()}
 
         with get_connection_manager():
@@ -98,7 +123,9 @@ class BaseContext:
 
         record.consume_airtable_data(response.json())
 
-    def _update(self, record_cls: Type['BaseRecord'], record: 'BaseRecord') -> None:
+    def _update(self,
+                record_cls: Type['BaseRecord'],
+                record: 'BaseRecord') -> None:
         import requests
         from pyrtable.connectionmanager import get_connection_manager
 
@@ -106,10 +133,10 @@ class BaseContext:
         if not dirty_fields:
             return
 
-        url = record_cls.get_url(record.id)
+        url = record.build_url(record_id=record.id)
         headers = record_cls.get_request_headers({
             'Content-Type': 'application/json',
-        })
+        }, base_id=record.base_id)
         data = {'fields': dirty_fields}
 
         with get_connection_manager():
@@ -124,7 +151,9 @@ class BaseContext:
         # noinspection PyProtectedMember
         record._clear_dirty_fields()
 
-    def save(self, record_cls: Type['BaseRecord'], record: 'BaseRecord') -> None:
+    def save(self,
+             record_cls: Type['BaseRecord'],
+             record: 'BaseRecord') -> None:
         """
         Save the record to Airtable.
         """
@@ -133,19 +162,15 @@ class BaseContext:
         else:
             self._update(record_cls, record)
 
-    def delete(self, record_cls: Type['BaseRecord'], record: Union['BaseRecord', str]) -> None:
+    def delete_id(self, *,
+                  record_cls: Type['BaseRecord'],
+                  record_id: str,
+                  base_and_table: '_BaseAndTablePrototype') -> None:
         import requests
         from pyrtable.connectionmanager import get_connection_manager
-        from pyrtable.record import BaseRecord
 
-        if isinstance(record, BaseRecord):
-            record_id = record.id
-        else:
-            record_id = record
-            record = None
-
-        url = record_cls.get_url(record_id)
-        headers = record_cls.get_request_headers()
+        url = base_and_table.build_url(record_id=record_id)
+        headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
 
         with get_connection_manager():
             response = requests.delete(url, headers=headers)
@@ -156,14 +181,21 @@ class BaseContext:
 
                 raise RequestError(message=error_message, type=error_type)
 
-        if record is not None:
-            record._id = None
-            record._created_timestamp = None
-            # delete() does not clear data, but anything that is semantically different from None
-            # becomes instantly dirty. That's why we are assigning None to all original values.
-            for attr_name, field in record.iter_fields():
-                # noinspection PyProtectedMember
-                record._orig_fields_values[attr_name] = field.decode_from_airtable(None)
+    def delete(self,
+               record_cls: Type['BaseRecord'],
+               record: 'BaseRecord') -> None:
+        if record.id is None:
+            return
+
+        self.delete_id(record_cls=record_cls, record_id=record.id, base_and_table=record)
+
+        record._id = None
+        record._created_timestamp = None
+        # delete() does not clear data, but anything that is semantically different from None
+        # becomes instantly dirty. That's why we are assigning None to all original fields values.
+        for attr_name, field in record.iter_fields():
+            # noinspection PyProtectedMember
+            record._orig_fields_values[attr_name] = field.decode_from_airtable(None)
 
 
 class SimpleCachingContext(BaseContext):
@@ -200,15 +232,20 @@ class SimpleCachingContext(BaseContext):
                     self._cache[self._build_key(arg.__class__, arg.id)] = arg
             elif isinstance(arg, RecordQuery):
                 # This will fetch and cache records
-                list(arg)
+                _ = list(arg)
             elif inspect.isclass(arg) and issubclass(arg, BaseRecord):
-                list(arg.objects.all())
+                # This will fetch and cache records
+                _ = list(arg.objects.all())
             else:
                 raise ValueError(arg)
 
-    def fetch_single(self, record_cls: Type['BaseRecord'], record_id: str) -> 'BaseRecord':
+    def fetch_single(self, *,
+                     record_cls: Type['BaseRecord'],
+                     record_id: str,
+                     base_and_table: '_BaseAndTablePrototype') -> 'BaseRecord':
         if not self._is_cached_class(record_cls):
-            return super(SimpleCachingContext, self).fetch_single(record_cls=record_cls, record_id=record_id)
+            return super(SimpleCachingContext, self).fetch_single(
+                record_cls=record_cls, record_id=record_id, base_and_table=base_and_table)
 
         key = self._build_key(record_cls, record_id)
         with self._cache_lock:
@@ -216,14 +253,18 @@ class SimpleCachingContext(BaseContext):
         if record is not None:
             return record
 
-        record = super(SimpleCachingContext, self).fetch_single(record_cls=record_cls, record_id=record_id)
+        record = super(SimpleCachingContext, self).fetch_single(
+            record_cls=record_cls, record_id=record_id, base_and_table=base_and_table)
         with self._cache_lock:
             self._cache[key] = record
         return record
 
-    def fetch_many(self, record_cls: Type['BaseRecord'], record_filter: Optional['BaseFilter'] = None) \
-            -> Iterator['BaseRecord']:
-        for record in super(SimpleCachingContext, self).fetch_many(record_cls, record_filter):
+    def fetch_many(self, *,
+                   record_cls: Type['BaseRecord'],
+                   base_and_table: '_BaseAndTablePrototype',
+                   record_filter: Optional['BaseFilter'] = None) -> Iterator['BaseRecord']:
+        for record in super(SimpleCachingContext, self).fetch_many(
+                record_cls=record_cls, base_and_table=base_and_table, record_filter=record_filter):
             if self._is_cached_class(record_cls):
                 with self._cache_lock:
                     self._cache[self._build_key(record_cls, record.id)] = record
@@ -235,19 +276,16 @@ class SimpleCachingContext(BaseContext):
             with self._cache_lock:
                 self._cache[self._build_key(record_cls, record.id)] = record
 
-    def delete(self, record_cls: Type['BaseRecord'], record: Union['BaseRecord', str]) -> None:
+    def delete_id(self, *,
+                  record_cls: Type['BaseRecord'],
+                  record_id: str,
+                  base_and_table: '_BaseAndTablePrototype') -> None:
         if self._is_cached_class(record_cls):
-            from pyrtable.record import BaseRecord
+            with self._cache_lock:
+                self._cache.pop(self._build_key(record_cls, record_id), None)
 
-            if isinstance(record, BaseRecord):
-                record_id = record.id
-            else:
-                record_id = record
-            if record_id is not None:
-                with self._cache_lock:
-                    self._cache.pop(self._build_key(record_cls, record_id), None)
-
-        super(SimpleCachingContext, self).delete(record_cls, record)
+        super(SimpleCachingContext, self).delete_id(
+            record_cls=record_cls, record_id=record_id, base_and_table=base_and_table)
 
 
 __all__ = ['BaseContext', 'SimpleCachingContext']
