@@ -1,7 +1,9 @@
-import collections.abc
 import datetime
 import re
 from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, Union, List, Callable, Tuple
+
+from ._baseandtable import _BaseAndTableSettablePrototype, _BaseAndTableSettableMixin
+from .query import RecordQuery, _QueryableProtocol
 
 
 try:
@@ -18,12 +20,7 @@ from pyrtable.fields import BaseField
 
 
 if TYPE_CHECKING:
-    from .filters.base import BaseFilter
-
-
-def encode_table_id(table_id: str) -> str:
-    import urllib.parse
-    return urllib.parse.quote(table_id)
+    pass
 
 
 class _MetaManager:
@@ -57,45 +54,17 @@ class _MetaManager:
         return self
 
 
-class RecordQuery(collections.abc.Iterable):
-    _base_id: Optional[str] = None
-    _table_id: Optional[str] = None
+class _ObjectsManager(_QueryableProtocol, _BaseAndTableSettablePrototype):
+    @property
+    def base_id(self) -> Optional[str]:
+        return self._record_class.get_class_base_id()
 
-    def __init__(self, record_class, flt: Optional['BaseFilter'] = None):
-        self._record_class = record_class
-        self._filter = flt
+    @property
+    def table_id(self) -> Optional[str]:
+        return self._record_class.get_class_table_id()
 
-    def all(self) -> 'RecordQuery':
-        return self
-
-    def filter(self, *args, **kwargs) -> 'RecordQuery':
-        from .filters import Q
-
-        if self._filter is None:
-            self._filter = Q(*args, **kwargs)
-        elif isinstance(self._filter, Q):
-            self._filter.extend(*args, **kwargs)
-        else:
-            self._filter = Q(self._filter, *args, **kwargs)
-
-        return self
-
-    def set_base_id(self, base_id: str) -> 'RecordQuery':
-        self._base_id = base_id
-        return self
-
-    def set_table_id(self, table_id: str) -> 'RecordQuery':
-        self._table_id = table_id
-        return self
-
-    def __iter__(self) -> Iterator['BaseRecord']:
-        from pyrtable.context import get_default_context
-        yield from get_default_context().fetch_many(
-            self._record_class, self._filter, base_id=self._base_id, table_id=self._table_id)
-
-
-class _ObjectsManager:
-    def __init__(self, record_class):
+    def __init__(self, record_class: Type['BaseRecord']):
+        super().__init__()
         self._record_class = record_class
 
     def all(self) -> RecordQuery:
@@ -108,10 +77,14 @@ class _ObjectsManager:
         record_query_cls = self._record_class._get_meta_attr('record_query_class', RecordQuery)
         return record_query_cls(record_class=self._record_class, flt=Q(*args, **kwargs))
 
-    def get(self, record_id: str, base_id: Optional[str] = None, table_id: Optional[str] = None) -> 'BaseRecord':
+    def get(self, record_id: str) -> 'BaseRecord':
         from pyrtable.context import get_default_context
+        from ._baseandtable import BaseAndTable
+
+        base_and_table = BaseAndTable(base_id=self._record_class.get_class_base_id(),
+                                      table_id=self._record_class.get_class_table_id())
         return get_default_context().fetch_single(
-            self._record_class, record_id, base_id=base_id, table_id=table_id)
+            record_cls=self._record_class, record_id=record_id, base_and_table=base_and_table)
 
     def set_base_id(self, base_id: str) -> RecordQuery:
         return self.all().set_base_id(base_id)
@@ -136,13 +109,15 @@ class _BaseRecordPrototype:
         api_key: str
         base_id: str
         table_id: str
+        record_query_class: Type['RecordQuery']
 
         get_api_key: Callable[[], str]
         get_base_id: Callable[[], str]
         get_table_id: Callable[[], str]
+        get_record_query_class: Callable[[], Type['RecordQuery']]
 
 
-class BaseRecord(_BaseRecordPrototype):
+class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordPrototype):
     _ATTRIBUTE_NOT_SPECIFIED = object()
 
     _id: Optional[str] = None
@@ -191,10 +166,9 @@ class BaseRecord(_BaseRecordPrototype):
         return instance
 
     def __init__(self, _base_id: Optional[str] = None, _table_id: Optional[str] = None, **kwargs):
+        super().__init__(base_id=_base_id, table_id=_table_id)
         self._fields_values = {}
         self._orig_fields_values = {}
-        self._base_id = _base_id
-        self._table_id = _table_id
 
         for attr_name, field in self.iter_fields():
             self._fields_values[attr_name] = field.decode_from_airtable(None)
@@ -227,23 +201,26 @@ class BaseRecord(_BaseRecordPrototype):
         self._clear_dirty_fields()
 
     @property
-    def id(self):
+    def id(self) -> Optional[str]:
         return self._id
 
     @property
-    def created_timestamp(self):
+    def created_timestamp(self) -> Optional[datetime.datetime]:
         return self._created_timestamp
 
-    def delete(self):
+    def delete(self) -> None:
+        """
+        Delete the record from Airtable.
+        """
         from pyrtable.context import get_default_context
-        get_default_context().delete(self.__class__, self, base_id=self._base_id, table_id=self._table_id)
+        get_default_context().delete(self.__class__, self)
 
     def save(self) -> None:
         """
         Save the record to Airtable.
         """
         from pyrtable.context import get_default_context
-        get_default_context().save(self.__class__, self, base_id=self._base_id, table_id=self._table_id)
+        get_default_context().save(self.__class__, self)
 
     def encode_to_airtable(self, include_non_dirty_fields=False) -> Dict[str, Any]:
         result = {}
@@ -326,32 +303,12 @@ class BaseRecord(_BaseRecordPrototype):
         raise AttributeError("'Meta.%s' attribute is not defined for class %r" % (attr_name, cls.__name__))
 
     @classmethod
-    def get_base_id(cls) -> str:
+    def get_class_base_id(cls) -> str:
         return cls._get_meta_attr('base_id')
 
     @classmethod
-    def get_table_id(cls) -> str:
+    def get_class_table_id(cls) -> str:
         return cls._get_meta_attr('table_id')
-
-    @classmethod
-    def get_url(cls,
-                record_id: Optional[str] = None,
-                base_id: Optional[str] = None,
-                table_id: Optional[str] = None) -> str:
-        if base_id is None:
-            base_id = cls.get_base_id()
-        if base_id is None:
-            raise ValueError('base_id is None')
-
-        if table_id is None:
-            table_id = cls.get_table_id()
-        if table_id is None:
-            raise ValueError('table_id is None')
-
-        url = 'https://api.airtable.com/v0/%s/%s' % (base_id, encode_table_id(table_id))
-        if record_id is not None:
-            url += '/%s' % record_id
-        return url
 
 
 class APIKeyFromSecretsFileMixin:
@@ -367,7 +324,7 @@ class APIKeyFromSecretsFileMixin:
         cls: Union[BaseRecord, APIKeyFromSecretsFileMixin]
 
         if base_id is None:
-            base_id = cls.get_base_id()
+            base_id = cls.get_class_base_id()
 
         all_api_keys = load_config_file(cls.AIRTABLE_SECRETS_FILENAME)
         return all_api_keys[base_id]
@@ -393,4 +350,4 @@ class TableIDFromClassNameMixin:
         return table_id
 
 
-__all__ = ['RecordQuery', 'BaseRecord', 'APIKeyFromSecretsFileMixin', 'TableIDFromClassNameMixin']
+__all__ = ['BaseRecord', 'APIKeyFromSecretsFileMixin', 'TableIDFromClassNameMixin']

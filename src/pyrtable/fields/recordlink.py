@@ -97,7 +97,7 @@ class _RecordLink:
         return self._record is not None and self._record is other._record
 
 
-class _SingleRecordIdLinkPseudoField:
+class _SingleRecordIdLinkProxyField:
     def __init__(self, record_attr_name: str):
         self._record_attr_name = record_attr_name
 
@@ -123,7 +123,7 @@ class SingleRecordLinkField(BaseRecordLinkField):
     @classmethod
     def _install_extra_properties(cls, record_cls: Type['BaseRecord'], attr_name: str):
         super()._install_extra_properties(record_cls, attr_name)
-        setattr(record_cls, cls._get_id_attr_name(attr_name), _SingleRecordIdLinkPseudoField(attr_name))
+        setattr(record_cls, cls._get_id_attr_name(attr_name), _SingleRecordIdLinkProxyField(attr_name))
 
     def __get__(self, instance, owner) -> Optional['BaseRecord']:
         value = super().__get__(instance, owner)
@@ -238,7 +238,7 @@ class _RecordLinkCollection(collections.abc.Collection):
             yield item.record
 
 
-class _MultipleRecordIdsLinkPseudoField:
+class _MultipleRecordIdsLinkProxyField:
     def __init__(self, record_attr_name: str):
         self._record_attr_name = record_attr_name
 
@@ -257,7 +257,7 @@ class MultipleRecordLinkField(BaseRecordLinkField):
     @classmethod
     def _install_extra_properties(cls, record_cls: Type['BaseRecord'], attr_name: str):
         super()._install_extra_properties(record_cls, attr_name)
-        setattr(record_cls, cls._get_ids_attr_name(attr_name), _MultipleRecordIdsLinkPseudoField(attr_name))
+        setattr(record_cls, cls._get_ids_attr_name(attr_name), _MultipleRecordIdsLinkProxyField(attr_name))
 
     def validate(self, value: Optional[Union[_RecordLinkCollection, Iterable[Any]]]) -> Any:
         if isinstance(value, _RecordLinkCollection):

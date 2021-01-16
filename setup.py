@@ -19,7 +19,6 @@ setup(
     python_requires='>=3.7',
     install_requires=[
         "deprecated",
-        "furl>=2.0.0",
         "requests>=2.22.0",
         "simplejson>=3.16.0",
     ],
@@ -35,7 +34,6 @@ setup(
         "Natural Language :: English",
         "Operating System :: OS Independent",
         "Programming Language :: Python",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: CPython",

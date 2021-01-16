@@ -48,7 +48,7 @@ After that, common operations are pretty simple:
 # Iterating over all records
 for employee in EmployeeRecord.objects.all():
     print("%s is currently working on %d project(s)" % (
-            employee.name, len(employee.projects)))
+        employee.name, len(employee.projects)))
 
 # Filtering
 for employee in EmployeeRecord.objects.filter(
@@ -119,4 +119,4 @@ Want to try it out, contribute, suggest, offer a hand? Great! The project is ava
 
 Pyrtable is released under [MIT license](https://opensource.org/licenses/MIT).
 
-Copyright (c) 2020 Vilar Fiuza da Camara Neto
+Copyright (c) 2020,2021 Vilar Fiuza da Camara Neto
