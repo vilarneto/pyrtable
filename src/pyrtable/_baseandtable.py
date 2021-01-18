@@ -1,6 +1,5 @@
 import abc
-from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Type
+from typing import TYPE_CHECKING, Optional, Type, Protocol
 
 
 if TYPE_CHECKING:
@@ -12,7 +11,7 @@ def encode_table_id(table_id: str) -> str:
     return urllib.parse.quote(table_id)
 
 
-class _BaseAndTablePrototype(metaclass=abc.ABCMeta):
+class _BaseAndTableProtocol(Protocol, metaclass=abc.ABCMeta):
     _API_ROOT_URL = 'https://api.airtable.com/v0'
 
     @property
@@ -33,6 +32,12 @@ class _BaseAndTablePrototype(metaclass=abc.ABCMeta):
             url += '/%s' % record_id
         return url
 
+    def ensure_base_and_table_match(self, other: '_BaseAndTableProtocol'):
+        if self.base_id != other.base_id:
+            raise ValueError('Base IDs do not match')
+        if self.table_id != other.table_id:
+            raise ValueError('Table IDs do not match')
+
     def _validate_base_table_ids(self) -> None:
         if self.base_id is None:
             raise ValueError('Base ID is not set')
@@ -40,7 +45,7 @@ class _BaseAndTablePrototype(metaclass=abc.ABCMeta):
             raise ValueError('Table ID is not set')
 
 
-class _BaseAndTableSettablePrototype(_BaseAndTablePrototype, metaclass=abc.ABCMeta):
+class _BaseAndTableSettableProtocol(_BaseAndTableProtocol, metaclass=abc.ABCMeta):
     @abc.abstractmethod
     def set_base_id(self, base_id: str) -> '_BaseAndTableSettableMixin':
         ...
@@ -50,7 +55,7 @@ class _BaseAndTableSettablePrototype(_BaseAndTablePrototype, metaclass=abc.ABCMe
         ...
 
 
-class _BaseAndTableSettableMixin(_BaseAndTableSettablePrototype):
+class _BaseAndTableSettableMixin(_BaseAndTableSettableProtocol):
     def set_base_id(self, base_id: str) -> '_BaseAndTableSettableMixin':
         self._base_id = base_id
         return self
@@ -85,10 +90,21 @@ class _BaseAndTableSettableMixin(_BaseAndTableSettablePrototype):
             self._table_id = record_cls.get_class_table_id()
 
 
-@dataclass(frozen=True)
-class BaseAndTable(_BaseAndTablePrototype):
-    base_id: Optional[str]
-    table_id: Optional[str]
+class BaseAndTable(_BaseAndTableProtocol):
+    _base_id: Optional[str]
+    _table_id: Optional[str]
+
+    def __init__(self, base_id: Optional[str] = None, table_id: Optional[str] = None):
+        self._base_id = base_id
+        self._table_id = table_id
+
+    @property
+    def base_id(self) -> Optional[str]:
+        return self._base_id
+
+    @property
+    def table_id(self) -> Optional[str]:
+        return self._table_id
 
 
-__all__ = ['_BaseAndTablePrototype', '_BaseAndTableSettablePrototype', '_BaseAndTableSettableMixin', 'BaseAndTable']
+__all__ = ['_BaseAndTableProtocol', '_BaseAndTableSettableProtocol', '_BaseAndTableSettableMixin', 'BaseAndTable']

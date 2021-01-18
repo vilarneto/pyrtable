@@ -9,10 +9,10 @@ except ImportError:
 
 
 if TYPE_CHECKING:
+    from pyrtable._baseandtable import _BaseAndTableProtocol
     from pyrtable.filters.base import BaseFilter
+    from pyrtable.query import RecordQuery
     from pyrtable.record import BaseRecord
-    from ..query import RecordQuery
-    from .._baseandtable import _BaseAndTablePrototype
 
 
 # noinspection PyMethodMayBeStatic
@@ -20,7 +20,7 @@ class BaseContext:
     def fetch_single(self, *,
                      record_cls: Type['BaseRecord'],
                      record_id: str,
-                     base_and_table: '_BaseAndTablePrototype') \
+                     base_and_table: '_BaseAndTableProtocol') \
             -> 'BaseRecord':
         import requests
         from pyrtable.connectionmanager import get_connection_manager
@@ -48,7 +48,7 @@ class BaseContext:
 
     def fetch_many(self, *,
                    record_cls: Type['BaseRecord'],
-                   base_and_table: '_BaseAndTablePrototype',
+                   base_and_table: '_BaseAndTableProtocol',
                    record_filter: Optional['BaseFilter'] = None) \
             -> Iterator['BaseRecord']:
         import urllib.parse
@@ -165,7 +165,7 @@ class BaseContext:
     def delete_id(self, *,
                   record_cls: Type['BaseRecord'],
                   record_id: str,
-                  base_and_table: '_BaseAndTablePrototype') -> None:
+                  base_and_table: '_BaseAndTableProtocol') -> None:
         import requests
         from pyrtable.connectionmanager import get_connection_manager
 
@@ -195,13 +195,15 @@ class BaseContext:
         # becomes instantly dirty. That's why we are assigning None to all original fields values.
         for attr_name, field in record.iter_fields():
             # noinspection PyProtectedMember
-            record._orig_fields_values[attr_name] = field.decode_from_airtable(None)
+            record._orig_fields_values[attr_name] = field.decode_from_airtable(None, base_and_table=record)
 
 
 class SimpleCachingContext(BaseContext):
     @staticmethod
-    def _build_key(record_cls: Type['BaseRecord'], record_id: str) -> str:
-        return '%s:%s' % (record_cls.__name__, record_id)
+    def _build_key(record_cls: Type['BaseRecord'], base_and_table: '_BaseAndTableProtocol', record_id: str) -> str:
+        # noinspection PyProtectedMember
+        base_and_table._validate_base_table_ids()
+        return '%s:%s:%s' % (record_cls.__name__, base_and_table.base_id, record_id)
 
     _cache: Dict[str, 'BaseRecord']
 
@@ -224,12 +226,13 @@ class SimpleCachingContext(BaseContext):
 
     def pre_cache(self, *args: Union['BaseRecord', 'RecordQuery', Type['BaseRecord']]):
         import inspect
-        from pyrtable.record import BaseRecord, RecordQuery
+        from pyrtable.query import RecordQuery
+        from pyrtable.record import BaseRecord
 
         for arg in args:
             if isinstance(arg, BaseRecord) and arg.id is not None:
                 with self._cache_lock:
-                    self._cache[self._build_key(arg.__class__, arg.id)] = arg
+                    self._cache[self._build_key(arg.__class__, arg, arg.id)] = arg
             elif isinstance(arg, RecordQuery):
                 # This will fetch and cache records
                 _ = list(arg)
@@ -242,12 +245,12 @@ class SimpleCachingContext(BaseContext):
     def fetch_single(self, *,
                      record_cls: Type['BaseRecord'],
                      record_id: str,
-                     base_and_table: '_BaseAndTablePrototype') -> 'BaseRecord':
+                     base_and_table: '_BaseAndTableProtocol') -> 'BaseRecord':
         if not self._is_cached_class(record_cls):
             return super(SimpleCachingContext, self).fetch_single(
                 record_cls=record_cls, record_id=record_id, base_and_table=base_and_table)
 
-        key = self._build_key(record_cls, record_id)
+        key = self._build_key(record_cls, base_and_table, record_id)
         with self._cache_lock:
             record = self._cache.get(key)
         if record is not None:
@@ -261,28 +264,28 @@ class SimpleCachingContext(BaseContext):
 
     def fetch_many(self, *,
                    record_cls: Type['BaseRecord'],
-                   base_and_table: '_BaseAndTablePrototype',
+                   base_and_table: '_BaseAndTableProtocol',
                    record_filter: Optional['BaseFilter'] = None) -> Iterator['BaseRecord']:
         for record in super(SimpleCachingContext, self).fetch_many(
                 record_cls=record_cls, base_and_table=base_and_table, record_filter=record_filter):
             if self._is_cached_class(record_cls):
                 with self._cache_lock:
-                    self._cache[self._build_key(record_cls, record.id)] = record
+                    self._cache[self._build_key(record_cls, record, record.id)] = record
             yield record
 
     def save(self, record_cls: Type['BaseRecord'], record: 'BaseRecord') -> None:
         super(SimpleCachingContext, self).save(record_cls, record)
         if self._is_cached_class(record_cls):
             with self._cache_lock:
-                self._cache[self._build_key(record_cls, record.id)] = record
+                self._cache[self._build_key(record_cls, record, record.id)] = record
 
     def delete_id(self, *,
                   record_cls: Type['BaseRecord'],
                   record_id: str,
-                  base_and_table: '_BaseAndTablePrototype') -> None:
+                  base_and_table: '_BaseAndTableProtocol') -> None:
         if self._is_cached_class(record_cls):
             with self._cache_lock:
-                self._cache.pop(self._build_key(record_cls, record_id), None)
+                self._cache.pop(self._build_key(record_cls, base_and_table, record_id), None)
 
         super(SimpleCachingContext, self).delete_id(
             record_cls=record_cls, record_id=record_id, base_and_table=base_and_table)

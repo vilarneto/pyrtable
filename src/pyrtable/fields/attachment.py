@@ -1,7 +1,11 @@
 from dataclasses import dataclass
-from typing import Any, Dict, Optional, List
+from typing import TYPE_CHECKING, Any, Dict, Optional, List
 
 from .base import BaseField
+
+
+if TYPE_CHECKING:
+    from pyrtable._baseandtable import _BaseAndTableProtocol
 
 
 @dataclass
@@ -60,7 +64,8 @@ class Attachment:
 
 
 class AttachmentField(BaseField):
-    def decode_from_airtable(self, value: Optional[List[Dict[str, Any]]]) -> List[Attachment]:
+    def decode_from_airtable(self, value: Optional[List[Dict[str, Any]]], base_and_table: '_BaseAndTableProtocol')\
+            -> List[Attachment]:
         if not value:
             return []
         return [Attachment(**item_data) for item_data in value]

@@ -1,8 +1,8 @@
 import datetime
 import re
-from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, Union, List, Callable, Tuple
+from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, Union, List, Callable, Tuple, Protocol
 
-from ._baseandtable import _BaseAndTableSettablePrototype, _BaseAndTableSettableMixin
+from ._baseandtable import _BaseAndTableSettableProtocol, _BaseAndTableSettableMixin
 from .query import RecordQuery, _QueryableProtocol
 
 
@@ -54,7 +54,7 @@ class _MetaManager:
         return self
 
 
-class _ObjectsManager(_QueryableProtocol, _BaseAndTableSettablePrototype):
+class _ObjectsManager(_QueryableProtocol, _BaseAndTableSettableProtocol):
     @property
     def base_id(self) -> Optional[str]:
         return self._record_class.get_class_base_id()
@@ -68,23 +68,16 @@ class _ObjectsManager(_QueryableProtocol, _BaseAndTableSettablePrototype):
         self._record_class = record_class
 
     def all(self) -> RecordQuery:
-        return self.filter()
+        # noinspection PyProtectedMember
+        record_query_cls: Type[RecordQuery] = self._record_class._get_meta_attr('record_query_class', RecordQuery)
+        record_query = record_query_cls(record_class=self._record_class)
+        return record_query
 
     def filter(self, *args, **kwargs) -> RecordQuery:
-        from .filters.q import Q
-
-        # noinspection PyProtectedMember
-        record_query_cls = self._record_class._get_meta_attr('record_query_class', RecordQuery)
-        return record_query_cls(record_class=self._record_class, flt=Q(*args, **kwargs))
+        return self.all().filter(*args, **kwargs)
 
     def get(self, record_id: str) -> 'BaseRecord':
-        from pyrtable.context import get_default_context
-        from ._baseandtable import BaseAndTable
-
-        base_and_table = BaseAndTable(base_id=self._record_class.get_class_base_id(),
-                                      table_id=self._record_class.get_class_table_id())
-        return get_default_context().fetch_single(
-            record_cls=self._record_class, record_id=record_id, base_and_table=base_and_table)
+        return self.all().get(record_id=record_id)
 
     def set_base_id(self, base_id: str) -> RecordQuery:
         return self.all().set_base_id(base_id)
@@ -103,8 +96,8 @@ class _ObjectsManagerWrapper:
         return _ObjectsManagerWrapper._managers[owner]
 
 
-class _BaseRecordPrototype:
-    """Prototype for type hinting"""
+class _BaseRecordProtocol(Protocol):
+    """Protocol for type hinting"""
     class Meta:
         api_key: str
         base_id: str
@@ -117,7 +110,7 @@ class _BaseRecordPrototype:
         get_record_query_class: Callable[[], Type['RecordQuery']]
 
 
-class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordPrototype):
+class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
     _ATTRIBUTE_NOT_SPECIFIED = object()
 
     _id: Optional[str] = None
@@ -171,7 +164,7 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordPrototype):
         self._orig_fields_values = {}
 
         for attr_name, field in self.iter_fields():
-            self._fields_values[attr_name] = field.decode_from_airtable(None)
+            self._fields_values[attr_name] = field.decode_from_airtable(None, base_and_table=self)
         self._clear_dirty_fields()
 
         for key, value in kwargs.items():
@@ -195,7 +188,7 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordPrototype):
         for attr_name, field in self.iter_fields():
             if field.column_name is None:
                 continue
-            value = field.decode_from_airtable(fields_values.get(field.column_name))
+            value = field.decode_from_airtable(fields_values.get(field.column_name), base_and_table=self)
             self._fields_values[attr_name] = value
 
         self._clear_dirty_fields()
@@ -304,11 +297,11 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordPrototype):
 
     @classmethod
     def get_class_base_id(cls) -> str:
-        return cls._get_meta_attr('base_id')
+        return cls._get_meta_attr('base_id', None)
 
     @classmethod
     def get_class_table_id(cls) -> str:
-        return cls._get_meta_attr('table_id')
+        return cls._get_meta_attr('table_id', None)
 
 
 class APIKeyFromSecretsFileMixin:
