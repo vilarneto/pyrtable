@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Optional, Any, Callable, Type
 
 
 if TYPE_CHECKING:
+    from pyrtable._baseandtable import _BaseAndTableProtocol
     from pyrtable.record import BaseRecord
 
 
@@ -50,33 +51,35 @@ class BaseField:
         # noinspection PyProtectedMember
         return instance._fields_values.get(self.attr_name)
 
-    def __set__(self, instance, value):
+    def __set__(self, instance: BaseRecord, value):
         if self.read_only and self._record.id is not None:
             raise AttributeError('%s: This field is read-only' % self.attr_name)
         # noinspection PyProtectedMember
-        instance._fields_values[self.attr_name] = self.validate(value)
+        instance._fields_values[self.attr_name] = self.validate(value, base_and_table=instance)
 
     @classmethod
     def is_same_value(cls, lhs, rhs) -> bool:
         return lhs == rhs
 
-    def validate(self, value: Any) -> Any:
+    def validate(self, value: Any, base_and_table: '_BaseAndTableProtocol') -> Any:
         """Validate the value before storing it.
 
         Validation means changing the value to appropriate form (e.g., making sure it's converted to a specific class or
         stripping spaces) and/or raising an exception if the value cannot be accepted.
 
         :param value: The value that's being stored.
+        :param base_and_table: The base-and-table info holder (usually the record itself)
         :return: The accepted value for storage.
         :raise: `ValueError` if the value value cannot be accepted.
         """
         return value
 
-    def decode_from_airtable(self, value):
+    def decode_from_airtable(self, value, base_and_table: '_BaseAndTableProtocol'):
         """
         Decode a field value retrieved through Airtable JSON API into the corresponding Python value.
 
         :param value: The field value retrieved from the server.
+        :param base_and_table: The base-and-table info holder (usually the record itself)
         :return: The corresponding Python value.
         """
         raise NotImplementedError()
