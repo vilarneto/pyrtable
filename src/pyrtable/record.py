@@ -318,6 +318,8 @@ class APIKeyFromSecretsFileMixin:
 
         if base_id is None:
             base_id = cls.get_class_base_id()
+        if base_id is None:
+            raise ValueError('Base ID is not set')
 
         all_api_keys = load_config_file(cls.AIRTABLE_SECRETS_FILENAME)
         api_key = all_api_keys.get(base_id)
