@@ -320,7 +320,10 @@ class APIKeyFromSecretsFileMixin:
             base_id = cls.get_class_base_id()
 
         all_api_keys = load_config_file(cls.AIRTABLE_SECRETS_FILENAME)
-        return all_api_keys[base_id]
+        api_key = all_api_keys.get(base_id)
+        if api_key is None:
+            raise KeyError('API key not found in file %r: %r' % (cls.AIRTABLE_SECRETS_FILENAME, api_key))
+        return api_key
 
 
 class TableIDFromClassNameMixin:
