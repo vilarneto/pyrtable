@@ -18,9 +18,9 @@ Pyrtable is a Python 3 library to interface with Airtable_'s REST API.
 
 .. _Airtable: https://airtable.com
 
-There are other Python projects to deal with Airtable. However, most of them basically offer a thin layer to ease authentication and filtering – at the end, the programmer still has to deal with JSON encoding/decoding, pagination, request rate limits, and so on.
+There are other Python projects to deal with Airtable. However, most of them basically offer a thin layer to ease authentication and filtering – at the end, the developer still has to deal with JSON encoding/decoding, pagination, request rate limits, and so on.
 
-Pyrtable is a high-level, ORM-like library that hides all these details. It performs automatic mapping between Airtable records and Python objects, allowing CRUD operations while aiming to be intuitive and fun. Programmers used to Django_ will find many similarities and will (hopefully) be able to interface with Airtable bases in just a couple of minutes.
+Pyrtable is a high-level, ORM-like library that hides all these details. It performs automatic mapping between Airtable records and Python objects, allowing CRUD operations while aiming to be intuitive and fun. Programmers used to Django_ will find many similarities and will be able to interface with Airtable bases in just a couple of minutes.
 
 .. _Django: https://www.djangoproject.com
 
@@ -130,7 +130,7 @@ Pyrtable also has some extra tools to cache data and read authentication keys fr
 Compatibility
 -------------
 
-Pyrtable is compatible with Python 3.7 and 3.8. Previous 3.x versions may or may not work. Python 2.x is not supported at all.
+Pyrtable is compatible with Python 3.8 and 3.9. Python 2.x is not supported at all.
 
 Questions, bug reports, improvements
 ------------------------------------

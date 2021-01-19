@@ -53,23 +53,19 @@ class BaseContext:
             -> Iterator['BaseRecord']:
         import urllib.parse
         import requests
-        # from furl import furl
         from pyrtable.connectionmanager import get_connection_manager
 
         headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
         url = base_and_table.build_url()
         parsed_url = urllib.parse.urlparse(url)
         url_query_params = urllib.parse.parse_qsl(parsed_url.query, keep_blank_values=True)
-        # f = furl(url)
 
         if record_filter:
             filter_by_formula = record_filter.build_formula(record_cls)
             if filter_by_formula:
-                # f.args['filterByFormula'] = filter_by_formula
                 url_query_params.append(('filterByFormula', filter_by_formula))
 
         column_names = record_cls.get_column_names()
-        # f.args['fields[]'] = column_names
         url_query_params.extend(('fields[]', column_name) for column_name in column_names)
 
         # noinspection PyProtectedMember
@@ -95,8 +91,9 @@ class BaseContext:
             if offset is None:
                 break
 
-            # f.args['offset'] = offset
-            url_query_params['offset'] = offset
+            url_query_params = list(filter(lambda pair: pair[0] != 'offset', url_query_params))
+            url_query_params.append(('offset', offset))
+
             # noinspection PyProtectedMember
             parsed_url = parsed_url._replace(query=urllib.parse.urlencode(url_query_params))
 
