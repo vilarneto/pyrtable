@@ -19,7 +19,7 @@ Quick Start
 
 .. note::
 
-    Notice that this tutorial will not work out-of-the-box, as you would need a corresponding Airtable table having columns with same names and value types as described below. However, you can adapt the examples below with your own existing bases or create one to experiment with Pyrtable.
+    Notice that this tutorial will not work out-of-the-box, as you would need a corresponding Airtable table containing columns with same names and value types as described below. However, you can adapt the examples below with your own existing bases or create one to experiment with Pyrtable.
 
 To use Pyrtable you will first need to subclass the :class:`BaseRecord` class. Objects of your subclass represent records on the corresponding Airtable table, while the subclass itself is used to interact with the table itself (mostly to fetch records). See the examples below::
 
@@ -51,26 +51,38 @@ To use Pyrtable you will first need to subclass the :class:`BaseRecord` class. O
 
 Further information about the structure of :class:`BaseRecord` subclasses (and how to fill these “``@TODO``” values) can be seen in :ref:`how to define record classes <Record classes>`. The reference for the field classes are available :ref:`here <Field classes>`.
 
-At this point, retrieving records from Airtable is quite easy::
+At this point, retrieving records from Airtable is quite easy (notice that all methods that deal with records are asynchronous -- that's why they are inside an `async` function)::
 
-    for employee in EmployeeRecord.objects.all():
-        print('Employee %s is working on %d projects' %
-              (employee.name, len(employee.projects)))
-        if employee.role == Role.DEVELOPER:
-            print('S/he may understand the difference between loops and conditionals!')
+    import asyncio
+
+    async def main():
+        async for employee in EmployeeRecord.objects.all():
+            print('Employee %s is working on %d projects' %
+                  (employee.name, len(employee.projects)))
+            if employee.role == Role.DEVELOPER:
+                print('S/he may understand the difference between loops and conditionals!')
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
 
 Creating, updating and deleting records are also easy::
 
-    # Creating a record
-    new_employee = EmployeeRecord(
-            name='John Doe',
-            birth_date=datetime.date(1980, 5, 10),
-            role=Role.DEVELOPER)
-    new_employee.save()
+    import asyncio
 
-    # Updating a record
-    new_employee.role = Role.MANAGER
-    new_employee.save()
+    async def main():
+        # Creating a record
+        new_employee = EmployeeRecord(
+                name='John Doe',
+                birth_date=datetime.date(1980, 5, 10),
+                role=Role.DEVELOPER)
+        await new_employee.save()
 
-    # Deleting a record
-    new_employee.delete()
+        # Updating a record
+        new_employee.role = Role.MANAGER
+        await new_employee.save()
+
+        # Deleting a record
+        await new_employee.delete()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())

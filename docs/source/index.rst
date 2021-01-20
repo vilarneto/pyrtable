@@ -61,27 +61,31 @@ Ok, let's have a taste of how one can define a class that maps into records of a
 
 After that, common operations are pretty simple::
 
-    # Iterating over all records
-    for employee in EmployeeRecord.objects.all():
-        print("%s is currently working on %d project(s)" % (
-                employee.name, len(employee.projects)))
+    async def main():
+        # Iterating over all records
+        async for employee in EmployeeRecord.objects.all():
+            print("%s is currently working on %d project(s)" % (
+                    employee.name, len(employee.projects)))
 
-    # Filtering
-    for employee in EmployeeRecord.objects.filter(
-            birth_date__gte=datetime.datetime(2001, 1, 1)):
-        print("%s was born in this century!" % employee.name)
+        # Filtering
+        async for employee in EmployeeRecord.objects.filter(
+                birth_date__gte=datetime.datetime(2001, 1, 1)):
+            print("%s was born in this century!" % employee.name)
 
-    # Creating, updating and deleting a record
-    new_employee = EmployeeRecord(
-        name='John Doe',
-        birth_date=datetime.date(1980, 5, 10),
-        role=Role.DEVELOPER)
-    new_employee.save()
+        # Creating, updating and deleting a record
+        new_employee = EmployeeRecord(
+            name='John Doe',
+            birth_date=datetime.date(1980, 5, 10),
+            role=Role.DEVELOPER)
+        await new_employee.save()
 
-    new_employee.role = Role.MANAGER
-    new_employee.save()
+        new_employee.role = Role.MANAGER
+        await new_employee.save()
 
-    new_employee.delete()
+        await new_employee.delete()
+
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())
 
 Notice that we don't deal with Airtable column or table names once record classes are defined.
 
@@ -90,16 +94,14 @@ Beyond the basics
 
 Keep in mind that Airtable is *not* a database system and is not really designed for tasks that need changing tons of data. In fact, only fetch (list) operations are batched – insert/update/delete operations are limited to a single record per request, and Airtable imposes a 5 requests per second limit even for paid accounts. You will need a full minute to update 300 records!
 
-That said, Pyrtable will respect that limit and will also track dirty fields to avoid unnecessary server requests, rendering ``.save()`` calls as no-ops for unchanged objects. So, the following code can actually hit the server zero times inside the ``for`` loop::
+That said, Pyrtable will respect that limit and will also track dirty fields to avoid unnecessary server requests, rendering ``.save()`` calls as no-ops for unchanged objects. So, the following pattern does not to be optimized when it comes to saving changes::
 
-    all_records = list(EmployeeRecord.objects.all())
+    async for employee in EmployeeRecord.objects.all():
+        # ...do operations that may or may not change record field values...
 
-    # Do operations that change some records here
-
-    for record in all_records:
-        # Only changed objects will be sent to the server
-        # No need to keep track of which records were changed
-        record.save()
+        # Only changed objects will be sent to the server --
+        # no need to keep track of which records were changed
+        await record.save()
 
 This also works with multiple threads, so the following pattern can be used to update and/or create several records::
 
@@ -117,13 +119,17 @@ This also works with multiple threads, so the following pattern can be used to u
 
 Or, if you want a really nice `tqdm <https://tqdm.github.io>`_ progress bar::
 
-    from tqdm import tqdm
+    from tqdm.asyncio import tqdm
 
-    with ThreadPoolExecutor(max_workers=10) as executor:
-        for _ in tqdm(executor.map(lambda record: record.save(), all_records),
-                      total=len(all_records), dynamic_ncols=True, unit='',
-                      desc='Updating Airtable records'):
-            pass
+    async for record in tqdm.asyncio.tqdm(
+            EmployeeRecord.objects.all(),
+            dynamic_ncols=True, unit='',
+            desc='Updating Airtable records'):
+        # ...do operations that may or may not change record field values...
+
+        # Only changed objects will be sent to the server --
+        # no need to keep track of which records were changed
+        await record.save()
 
 Pyrtable also has some extra tools to cache data and read authentication keys from external JSON/YAML files check out the :class:`APIKeyFromSecretsFileMixin` mixin class. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
 
@@ -144,7 +150,7 @@ Pyrtable is released under `MIT license`_.
 
 .. _MIT license: https://opensource.org/licenses/MIT
 
-Copyright (c) 2020 Vilar Fiuza da Camara Neto
+Copyright (c) 2020,2021 Vilar Fiuza da Camara Neto
 
 
 Indices and tables

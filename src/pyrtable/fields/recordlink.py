@@ -85,8 +85,7 @@ class _RecordLink(BaseAndTable):
             raise ValueError('Reference to unsaved or deleted record')
         return self._id
 
-    @property
-    async def record(self) -> BaseRecord:
+    async def get_record(self) -> BaseRecord:
         if self._record is None:
             if self._fetcher is None:
                 # @TODO Better error message
@@ -139,7 +138,7 @@ class SingleRecordLinkField(BaseRecordLinkField):
         value = super().__get__(instance, owner)
         return value.record if value is not None else None
 
-    def validate(self, value: Optional[Union[_RecordLink, Iterable[Any]]], base_and_table: '_BaseAndTableProtocol')\
+    def validate(self, value: Optional[Union[_RecordLink, Iterable[Any]]], base_and_table: '_BaseAndTableProtocol') \
             -> Any:
         from pyrtable.record import BaseRecord
 
@@ -261,6 +260,7 @@ class _RecordLinkCollection(BaseAndTable, collections.abc.Collection):
 
     def __iter__(self) -> Iterator[BaseRecord]:
         for item in self._items:
+            # @TODO Not going to work -- was renamed to get_record() and is now async
             yield item.record
 
 

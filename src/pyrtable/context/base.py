@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Type, Iterator, Optional, Union, Dict, Iterable
+from typing import TYPE_CHECKING, Any, Type, Iterator, Optional, Union, Dict, Iterable
 import threading
 from ..exceptions import RequestError
 
@@ -19,10 +19,29 @@ if TYPE_CHECKING:
 
 # noinspection PyMethodMayBeStatic
 class BaseContext:
-    async def fetch_single(self, *,
-                     record_cls: Type['BaseRecord'],
-                     record_id: str,
-                     base_and_table: '_BaseAndTableProtocol') \
+    async def _throw_on_response_error(
+            self,
+            response: 'aiohttp.ClientResponse',
+            response_data: Optional[Dict[str, Any]] = None):
+        if 400 <= response.status < 500:
+            if response_data is None:
+                response_data = await response.json()
+
+            error = response_data.get('error', {})
+
+            if error == 'NOT_FOUND':
+                raise KeyError(record_id)
+
+            error_message = error.get('message', '')
+            error_type = error.get('type', '')
+
+            raise RequestError(message=error_message, type=error_type)
+
+    async def fetch_single(
+            self, *,
+            record_cls: Type['BaseRecord'],
+            record_id: str,
+            base_and_table: '_BaseAndTableProtocol') \
             -> 'BaseRecord':
         import aiohttp
         from pyrtable.connectionmanager import get_connection_manager
@@ -34,26 +53,17 @@ class BaseContext:
             async with get_connection_manager():
                 async with session.get(url, headers=headers) as response:
                     response_data = await response.json()
-
-                    if 400 <= response.status < 500:
-                        error = response_data.get('error', {})
-
-                        if error == 'NOT_FOUND':
-                            raise KeyError(record_id)
-
-                        error_message = error.get('message', '')
-                        error_type = error.get('type', '')
-
-                        raise RequestError(message=error_message, type=error_type)
+                    await self._throw_on_response_error(response, response_data)
 
         record = record_cls(_base_id=base_and_table.base_id, _table_id=base_and_table.table_id)
         record.consume_airtable_data(response_data)
         return record
 
-    async def fetch_many(self, *,
-                   record_cls: Type['BaseRecord'],
-                   base_and_table: '_BaseAndTableProtocol',
-                   record_filter: Optional['BaseFilter'] = None) \
+    async def fetch_many(
+            self, *,
+            record_cls: Type['BaseRecord'],
+            base_and_table: '_BaseAndTableProtocol',
+            record_filter: Optional['BaseFilter'] = None) \
             -> Iterator['BaseRecord']:
         import urllib.parse
         import aiohttp
@@ -80,13 +90,7 @@ class BaseContext:
                 async with get_connection_manager():
                     async with session.get(parsed_url.geturl(), headers=headers) as response:
                         response_data = await response.json()
-
-                        if 400 <= response.status < 500:
-                            error = response_data.get('error', {})
-                            error_message = error.get('message', '')
-                            error_type = error.get('type', '')
-
-                            raise RequestError(message=error_message, type=error_type)
+                        await self._throw_on_response_error(response, response_data)
 
                 for record_data in response_data.get('records', []):
                     record = record_cls(_base_id=base_and_table.base_id, _table_id=base_and_table.table_id)
@@ -103,9 +107,10 @@ class BaseContext:
                 # noinspection PyProtectedMember
                 parsed_url = parsed_url._replace(query=urllib.parse.urlencode(url_query_params))
 
-    async def _create(self,
-                record_cls: Type['BaseRecord'],
-                record: 'BaseRecord') -> None:
+    async def _create(
+            self,
+            record_cls: Type['BaseRecord'],
+            record: 'BaseRecord') -> None:
         import aiohttp
         from pyrtable.connectionmanager import get_connection_manager
 
@@ -119,19 +124,14 @@ class BaseContext:
             async with get_connection_manager():
                 async with session.post(url, headers=headers, data=json.dumps(data)) as response:
                     response_data = await response.json()
-
-                    if 400 <= response.status < 500:
-                        error = response_data.get('error', {})
-                        error_message = error.get('message', '')
-                        error_type = error.get('type', '')
-
-                        raise RequestError(message=error_message, type=error_type)
+                    await self._throw_on_response_error(response, response_data)
 
         record.consume_airtable_data(response_data)
 
-    async def _update(self,
-                record_cls: Type['BaseRecord'],
-                record: 'BaseRecord') -> None:
+    async def _update(
+            self,
+            record_cls: Type['BaseRecord'],
+            record: 'BaseRecord') -> None:
         import aiohttp
         from pyrtable.connectionmanager import get_connection_manager
 
@@ -148,20 +148,15 @@ class BaseContext:
         async with aiohttp.ClientSession() as session:
             async with get_connection_manager():
                 async with session.patch(url, headers=headers, data=json.dumps(data)) as response:
-                    if 400 <= response.status < 500:
-                        response_data = await response.json()
-                        error = response_data.get('error', {})
-                        error_message = error.get('message', '')
-                        error_type = error.get('type', '')
-
-                        raise RequestError(message=error_message, type=error_type)
+                    await self._throw_on_response_error(response)
 
         # noinspection PyProtectedMember
         record._clear_dirty_fields()
 
-    async def save(self,
-             record_cls: Type['BaseRecord'],
-             record: 'BaseRecord') -> None:
+    async def save(
+            self,
+            record_cls: Type['BaseRecord'],
+            record: 'BaseRecord') -> None:
         """
         Save the record to Airtable.
         """
@@ -170,32 +165,29 @@ class BaseContext:
         else:
             await self._update(record_cls, record)
 
-    def delete_id(self, *,
-                  record_cls: Type['BaseRecord'],
-                  record_id: str,
-                  base_and_table: '_BaseAndTableProtocol') -> None:
-        import requests
+    async def delete_id(
+            self, *,
+            record_cls: Type['BaseRecord'],
+            record_id: str,
+            base_and_table: '_BaseAndTableProtocol') -> None:
+        import aiohttp
         from pyrtable.connectionmanager import get_connection_manager
 
         url = base_and_table.build_url(record_id=record_id)
         headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
 
-        with get_connection_manager():
-            response = requests.delete(url, headers=headers)
-            if 400 <= response.status_code < 500:
-                error = response.json().get('error', {})
-                error_message = error.get('message', '')
-                error_type = error.get('type', '')
+        async with aiohttp.ClientSession() as session:
+            async with get_connection_manager():
+                async with session.delete(url, headers=headers) as response:
+                    await self._throw_on_response_error(response)
 
-                raise RequestError(message=error_message, type=error_type)
-
-    def delete(self,
+    async def delete(self,
                record_cls: Type['BaseRecord'],
                record: 'BaseRecord') -> None:
         if record.id is None:
             return
 
-        self.delete_id(record_cls=record_cls, record_id=record.id, base_and_table=record)
+        await self.delete_id(record_cls=record_cls, record_id=record.id, base_and_table=record)
 
         record._id = None
         record._created_timestamp = None
@@ -287,7 +279,7 @@ class SimpleCachingContext(BaseContext):
             with self._cache_lock:
                 self._cache[self._build_key(record_cls, record, record.id)] = record
 
-    def delete_id(self, *,
+    async def delete_id(self, *,
                   record_cls: Type['BaseRecord'],
                   record_id: str,
                   base_and_table: '_BaseAndTableProtocol') -> None:
@@ -304,7 +296,36 @@ __all__ = ['BaseContext', 'SimpleCachingContext']
 
 if __name__ == '__main__':
     import asyncio
+    import tqdm, tqdm.asyncio
     from pyrtable.record import BaseRecord, APIKeyFromSecretsFileMixin
+
+    loop = asyncio.get_event_loop()
+
+    async def rw():
+        import random
+        print('Start…')
+        n = random.uniform(0.5, 2)
+        await asyncio.sleep(n)
+        print('Ok!')
+        return n
+
+    async def do():
+        tasks = [rw() for _ in range(10)]
+
+        # results = await asyncio.gather(*tasks)
+        # print(results)
+
+        # for result in asyncio.as_completed(tasks):
+        #     print(f'Result: {await result}')
+
+        for result in tqdm.tqdm(asyncio.as_completed(tasks)):
+            print(f'Result: {await result}')
+
+        # async for f in tqdm.asyncio.tqdm(tqdm.asyncio.trange(10)):
+        #     await rw()
+
+    # loop.run_until_complete(do())
+
 
     class TestRecord(APIKeyFromSecretsFileMixin, BaseRecord):
         class Meta:
@@ -316,9 +337,13 @@ if __name__ == '__main__':
 
         context = BaseContext()
         base_and_table = BaseAndTable(base_id='appZMKfqiPobryEy1', table_id='Students')
-        async for record in context.fetch_many(
-                record_cls=TestRecord, base_and_table=base_and_table):
+
+        # async for record in context.fetch_many(
+        #         record_cls=TestRecord, base_and_table=base_and_table):
+        #     print(record)
+
+        query = context.fetch_many(record_cls=TestRecord, base_and_table=base_and_table)
+        async for record in tqdm.asyncio.tqdm(query):
             print(record)
 
-    loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
