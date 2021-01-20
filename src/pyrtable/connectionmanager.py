@@ -22,6 +22,22 @@ class _ConnectionManager:
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
 
+    async def __aenter__(self):
+        with self._lock:
+            now = datetime.datetime.now()
+            elapsed_time = (now - self._last_timestamp).total_seconds()
+            self._last_timestamp = max(
+                now, self._last_timestamp + datetime.timedelta(seconds=self._min_interval_seconds))
+
+        if elapsed_time < self._min_interval_seconds:
+            import asyncio
+
+            wait_time = self._min_interval_seconds - delta_seconds
+            await asyncio.sleep(wait_time)
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        pass
+
 
 _connection_manager: Optional[_ConnectionManager] = None
 _connection_manager_lock = threading.Lock()

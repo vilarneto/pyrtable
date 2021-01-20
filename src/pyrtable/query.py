@@ -25,7 +25,7 @@ class _QueryableProtocol(Generic[RT], metaclass=abc.ABCMeta):
         ...
 
     @abc.abstractmethod
-    def get(self, record_id: str) -> RT:
+    async def get(self, record_id: str) -> RT:
         ...
 
 
@@ -55,19 +55,21 @@ class RecordQuery(_BaseAndTableSettableMixin, Generic[RT, QT], Iterable[RT], _Qu
 
         return self
 
-    def get(self, record_id: str) -> RT:
+    async def get(self, *, record_id: str) -> RT:
         from pyrtable.context import get_default_context
 
         if self._filter is not None:
             raise ValueError('Currently get() is not compatible with filters applied')
 
-        return get_default_context().fetch_single(
+        return await get_default_context().fetch_single(
             record_cls=self._record_class, record_id=record_id, base_and_table=self)
 
-    def __iter__(self) -> Iterator[RT]:
+    async def __aiter__(self) -> Iterator[RT]:
         from pyrtable.context import get_default_context
-        yield from get_default_context().fetch_many(
-            record_cls=self._record_class, base_and_table=self, record_filter=self._filter)
+
+        async for record in get_default_context().fetch_many(
+                record_cls=self._record_class, base_and_table=self, record_filter=self._filter):
+            yield record
 
 
 __all__ = ['_QueryableProtocol', 'RecordQuery']

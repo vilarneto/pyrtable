@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 
 class _RecordFetcher(Protocol):
-    def __call__(self, record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> 'BaseRecord':
+    async def __call__(self, record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> 'BaseRecord':
         ...
 
 
@@ -30,7 +30,7 @@ class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
         if linked_class is not None:
             from pyrtable.record import BaseRecord
 
-            def fetcher(linked_record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> BaseRecord:
+            async def fetcher(linked_record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> BaseRecord:
                 nonlocal linked_class
 
                 if isinstance(linked_class, str):
@@ -45,7 +45,7 @@ class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
                     query = query.set_base_id(base_and_table.base_id)
                 if base_and_table.table_id is not None:
                     query = query.set_table_id(base_and_table.table_id)
-                return query.get(record_id=linked_record_id)
+                return await query.get(record_id=linked_record_id)
 
         self._fetcher = fetcher
 
@@ -86,12 +86,12 @@ class _RecordLink(BaseAndTable):
         return self._id
 
     @property
-    def record(self) -> BaseRecord:
+    async def record(self) -> BaseRecord:
         if self._record is None:
             if self._fetcher is None:
                 # @TODO Better error message
                 raise ValueError("Don't know how to fetch a record - use `fetcher` or `linked_class` attributes")
-            self._record = self._fetcher(self._id, base_and_table=self)
+            self._record = await self._fetcher(self._id, base_and_table=self)
 
         return self._record
 

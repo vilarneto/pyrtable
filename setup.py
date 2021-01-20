@@ -16,7 +16,7 @@ setup(
     description='Django-inspired library to interface with Airtable',
     long_description=long_description,
     long_description_content_type="text/markdown",
-    python_requires='>=3.7',
+    python_requires='>=3.8',
     install_requires=[
         "deprecated",
         "requests>=2.22.0",
@@ -36,7 +36,6 @@ setup(
         "Programming Language :: Python",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
-        "Programming Language :: Python :: Implementation :: CPython",
         "Topic :: Software Development",
     ],
 )
