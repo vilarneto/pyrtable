@@ -1,6 +1,6 @@
 import abc
 import collections.abc
-from typing import TYPE_CHECKING, Generic, Iterable, Iterator, TypeVar, Type, Optional
+from typing import TYPE_CHECKING, Generic, Iterable, Iterator, TypeVar, Type, Optional, AsyncIterable, AsyncIterator
 
 from ._baseandtable import _BaseAndTableSettableMixin
 
@@ -29,8 +29,8 @@ class _QueryableProtocol(Generic[RT], metaclass=abc.ABCMeta):
         ...
 
 
-class RecordQuery(_BaseAndTableSettableMixin, Generic[RT, QT], Iterable[RT], _QueryableProtocol[RT],
-                  collections.abc.Iterable):
+class RecordQuery(_BaseAndTableSettableMixin, Generic[RT, QT], AsyncIterable[RT], _QueryableProtocol[RT],
+                  collections.abc.AsyncIterable):
     def __init__(self, record_class: Type['BaseRecord'], flt: Optional['BaseFilter'] = None):
         super().__init__(base_id=record_class.get_class_base_id(), table_id=record_class.get_class_table_id())
 
@@ -64,7 +64,7 @@ class RecordQuery(_BaseAndTableSettableMixin, Generic[RT, QT], Iterable[RT], _Qu
         return await get_default_context().fetch_single(
             record_cls=self._record_class, record_id=record_id, base_and_table=self)
 
-    async def __aiter__(self) -> Iterator[RT]:
+    async def __aiter__(self) -> AsyncIterator[RT]:
         from pyrtable.context import get_default_context
 
         async for record in get_default_context().fetch_many(

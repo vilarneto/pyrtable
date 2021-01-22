@@ -1,5 +1,5 @@
-from typing import TYPE_CHECKING, Any, Type, Iterator, Optional, Union, Dict, Iterable
-import threading
+from typing import TYPE_CHECKING, Any, Type, Iterator, Optional, Union, Dict, Iterable, AsyncIterator
+
 from ..exceptions import RequestError
 
 
@@ -22,20 +22,21 @@ class BaseContext:
     async def _throw_on_response_error(
             self,
             response: 'aiohttp.ClientResponse',
-            response_data: Optional[Dict[str, Any]] = None):
+            response_data: Optional[Dict[str, Any]] = None,
+            record_id: Optional[str] = None):
         if 400 <= response.status < 500:
             if response_data is None:
                 response_data = await response.json()
 
-            error = response_data.get('error', {})
+            error_data = response_data.get('error', {})
+            error_type = error_data.get('type')
 
-            if error == 'NOT_FOUND':
+            if error_type == 'MODEL_ID_NOT_FOUND' and record_id is not None:
                 raise KeyError(record_id)
 
-            error_message = error.get('message', '')
-            error_type = error.get('type', '')
+            error_message = error_data.get('message', '')
 
-            raise RequestError(message=error_message, type=error_type)
+            raise RequestError(message=error_message, error_type=error_type)
 
     async def fetch_single(
             self, *,
@@ -46,6 +47,9 @@ class BaseContext:
         import aiohttp
         from pyrtable.connectionmanager import get_connection_manager
 
+        if record_id is None:
+            raise ValueError(record_id)
+
         headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
         url = base_and_table.build_url(record_id=record_id)
 
@@ -53,7 +57,7 @@ class BaseContext:
             async with get_connection_manager():
                 async with session.get(url, headers=headers) as response:
                     response_data = await response.json()
-                    await self._throw_on_response_error(response, response_data)
+                    await self._throw_on_response_error(response, response_data=response_data, record_id=record_id)
 
         record = record_cls(_base_id=base_and_table.base_id, _table_id=base_and_table.table_id)
         record.consume_airtable_data(response_data)
@@ -64,7 +68,7 @@ class BaseContext:
             record_cls: Type['BaseRecord'],
             base_and_table: '_BaseAndTableProtocol',
             record_filter: Optional['BaseFilter'] = None) \
-            -> Iterator['BaseRecord']:
+            -> AsyncIterator['BaseRecord']:
         import urllib.parse
         import aiohttp
         from pyrtable.connectionmanager import get_connection_manager
@@ -90,7 +94,7 @@ class BaseContext:
                 async with get_connection_manager():
                     async with session.get(parsed_url.geturl(), headers=headers) as response:
                         response_data = await response.json()
-                        await self._throw_on_response_error(response, response_data)
+                        await self._throw_on_response_error(response, response_data=response_data)
 
                 for record_data in response_data.get('records', []):
                     record = record_cls(_base_id=base_and_table.base_id, _table_id=base_and_table.table_id)
@@ -124,7 +128,7 @@ class BaseContext:
             async with get_connection_manager():
                 async with session.post(url, headers=headers, data=json.dumps(data)) as response:
                     response_data = await response.json()
-                    await self._throw_on_response_error(response, response_data)
+                    await self._throw_on_response_error(response, response_data=response_data)
 
         record.consume_airtable_data(response_data)
 
@@ -148,7 +152,7 @@ class BaseContext:
         async with aiohttp.ClientSession() as session:
             async with get_connection_manager():
                 async with session.patch(url, headers=headers, data=json.dumps(data)) as response:
-                    await self._throw_on_response_error(response)
+                    await self._throw_on_response_error(response, record_id=record.id)
 
         # noinspection PyProtectedMember
         record._clear_dirty_fields()
@@ -179,7 +183,7 @@ class BaseContext:
         async with aiohttp.ClientSession() as session:
             async with get_connection_manager():
                 async with session.delete(url, headers=headers) as response:
-                    await self._throw_on_response_error(response)
+                    await self._throw_on_response_error(response, record_id=record_id)
 
     async def delete(self,
                record_cls: Type['BaseRecord'],
@@ -242,10 +246,11 @@ class SimpleCachingContext(BaseContext):
             else:
                 raise ValueError(arg)
 
-    async def fetch_single(self, *,
-                     record_cls: Type['BaseRecord'],
-                     record_id: str,
-                     base_and_table: '_BaseAndTableProtocol') -> 'BaseRecord':
+    async def fetch_single(
+            self, *,
+            record_cls: Type['BaseRecord'],
+            record_id: str,
+            base_and_table: '_BaseAndTableProtocol') -> 'BaseRecord':
         if not self._is_cached_class(record_cls):
             return await super(SimpleCachingContext, self).fetch_single(
                 record_cls=record_cls, record_id=record_id, base_and_table=base_and_table)

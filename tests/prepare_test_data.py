@@ -1,52 +1,13 @@
 import os
 import sys
-from typing import Optional, Any, Dict, List
+from typing import Optional, Any, Dict
 
 import click
 
-
-IndexData = List[Dict[str, Any]]
-
-
-def strip_url_path(url: str) -> str:
-    import urllib.parse
-
-    parsed_url = urllib.parse.urlparse(url)
-
-    url_query_params = urllib.parse.parse_qsl(parsed_url.query, keep_blank_values=True)
-    url_query_params.sort()
-    url_query_params = [pair for pair in url_query_params
-                        if pair[0] != 'pageSize']
-
-    # noinspection PyProtectedMember
-    parsed_url = parsed_url._replace(scheme='', netloc='', query=urllib.parse.urlencode(url_query_params))
-
-    return parsed_url.geturl()
+from .apiclient.utils import strip_url_path, build_request_file_name, build_index_file_path, load_index_data, IndexData
 
 
-def build_request_hash(method: str, url: str) -> str:
-    import hashlib
-    import urllib.parse
-
-    parsed_url = urllib.parse.urlparse(url)
-    url_query_params = urllib.parse.parse_qsl(parsed_url.query, keep_blank_values=True)
-    url_query_params.sort()
-    # noinspection PyProtectedMember
-    parsed_url = parsed_url._replace(scheme='', netloc='', query=urllib.parse.urlencode(url_query_params))
-
-    url = parsed_url.geturl()
-    hasher = hashlib.sha1()
-
-    hasher.update(method.encode('utf-8'))
-    hasher.update(b':')
-    hasher.update(url.encode('utf-8'))
-    return hasher.hexdigest()
-
-
-def build_request_file_name(method: str, url: str) -> str:
-    request_hash = build_request_hash(method, url)
-    file_path = f'{method.lower()}-{request_hash}.json'
-    return file_path
+_ALLOWED_HEADER_KEYS = {'Content-Type'}
 
 
 def replace_query_param(url: str, query_param_name: str, query_param_value: Optional[str]) -> str:
@@ -63,24 +24,6 @@ def replace_query_param(url: str, query_param_name: str, query_param_value: Opti
     parsed_url = parsed_url._replace(query=urllib.parse.urlencode(url_query_params))
     url = parsed_url.geturl()
     return url
-
-
-def build_index_file_path(output_dir: str) -> str:
-    return os.path.join(output_dir, 'index.yaml')
-
-
-def load_index_data(output_dir: str) -> IndexData:
-    import yaml
-
-    index_file_path = build_index_file_path(output_dir)
-
-    if os.path.isfile(index_file_path):
-        with open(index_file_path, 'rt', encoding='utf-8') as fd:
-            all_index_data = yaml.safe_load(fd) or []
-    else:
-        all_index_data = []
-
-    return all_index_data
 
 
 def save_index_data(output_dir: str, all_index_data: IndexData) -> None:
@@ -167,6 +110,12 @@ def cli(method: str,
         'uf': 'Unidades Federativas',
     }.get(table_name.lower(), table_name)
 
+    if record_id is not None:
+        if fields is not None:
+            raise RuntimeError('--fields cannot be used when a record ID is given')
+        if filter_formula is not None:
+            raise RuntimeError('--filter-formula cannot be used when a record ID is given')
+
     if auth_key is None:
         from getpass import getpass
         auth_key = getpass('Airtable authorization key: ')
@@ -217,6 +166,7 @@ def cli(method: str,
 
                 async with session.request(method, url, headers=headers) as response:
                     response_status = response.status
+                    response_headers = response.headers
                     response_content = await response.text()
                     response_data = await response.json()
 
@@ -231,16 +181,21 @@ def cli(method: str,
                 record_list = (response_data or {}).get('records')
                 if record_list is not None:
                     record_count = len(record_list)
-                    total_record_count += record_count
+                elif record_id is not None and response_status == 200:
+                    record_count = 1
                 else:
                     record_count = None
+
+                total_record_count += record_count or 0
 
                 request_data = {
                     'page_number': page_number,
                     'method': method,
                     'url': url,
                     'response': {
-                        'status': response_status,
+                        'status_code': response_status,
+                        'headers': [(key, value) for key, value in response_headers.items()
+                                    if key in _ALLOWED_HEADER_KEYS],
                         'content': response_content,
                     }
                 }

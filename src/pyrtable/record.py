@@ -76,8 +76,8 @@ class _ObjectsManager(_QueryableProtocol, _BaseAndTableSettableProtocol):
     def filter(self, *args, **kwargs) -> RecordQuery:
         return self.all().filter(*args, **kwargs)
 
-    def get(self, record_id: str) -> 'BaseRecord':
-        return self.all().get(record_id=record_id)
+    async def get(self, record_id: str) -> 'BaseRecord':
+        return await self.all().get(record_id=record_id)
 
     def set_base_id(self, base_id: str) -> RecordQuery:
         return self.all().set_base_id(base_id)
