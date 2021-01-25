@@ -2,6 +2,13 @@ import os
 from typing import List, Dict, Any
 
 
+def build_hash_value(hasher, value: Any):
+    import simplejson
+
+    json = simplejson.dumps(value, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+    hasher.update(json.encode('utf-8'))
+
+
 def strip_url_path(url: str) -> str:
     import urllib.parse
 
@@ -19,7 +26,7 @@ def strip_url_path(url: str) -> str:
     return parsed_url.geturl()
 
 
-def build_request_hash(method: str, url: str) -> str:
+def build_request_hash(method: str, url: str, data: Any) -> str:
     import hashlib
 
     url = strip_url_path(url)
@@ -28,11 +35,16 @@ def build_request_hash(method: str, url: str) -> str:
     hasher.update(method.encode('utf-8'))
     hasher.update(b':')
     hasher.update(url.encode('utf-8'))
+
+    if data is not None:
+        hasher.update(b':')
+        build_hash_value(hasher, data)
+
     return hasher.hexdigest()
 
 
-def build_request_file_name(method: str, url: str) -> str:
-    request_hash = build_request_hash(method, url)
+def build_request_file_name(method: str, url: str, data: Any) -> str:
+    request_hash = build_request_hash(method, url, data)
     file_path = f'{method.lower()}-{request_hash}.json'
     return file_path
 
@@ -58,5 +70,5 @@ def load_index_data(data_dir: str) -> IndexData:
     return all_index_data
 
 
-__all__ = ['IndexData', 'strip_url_path', 'build_request_hash', 'build_request_file_name', 'build_index_file_path',
-           'load_index_data']
+__all__ = ['IndexData', 'build_hash_value', 'strip_url_path', 'build_request_hash', 'build_request_file_name',
+           'build_index_file_path', 'load_index_data']

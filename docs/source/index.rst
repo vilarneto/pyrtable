@@ -92,7 +92,7 @@ Notice that we don't deal with Airtable column or table names once record classe
 Beyond the basics
 -----------------
 
-Keep in mind that Airtable is *not* a database system and is not really designed for tasks that need changing tons of data. In fact, only fetch (list) operations are batched – insert/update/delete operations are limited to a single record per request, and Airtable imposes a 5 requests per second limit even for paid accounts. You will need a full minute to update 300 records!
+Keep in mind that Airtable is *not* a database system and is not really designed for tasks that need changing tons of data. In fact, Airtable imposes a 5 requests per second limit even for paid accounts. You will need a full minute to update 300 records!
 
 That said, Pyrtable will respect that limit and will also track dirty fields to avoid unnecessary server requests, rendering ``.save()`` calls as no-ops for unchanged objects. So, the following pattern does not to be optimized when it comes to saving changes::
 

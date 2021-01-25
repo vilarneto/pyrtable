@@ -159,6 +159,11 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
         return instance
 
     def __init__(self, _base_id: Optional[str] = None, _table_id: Optional[str] = None, **kwargs):
+        if _base_id is None:
+            _base_id = self._get_meta_attr('base_id', None)
+        if _table_id is None:
+            _table_id = self._get_meta_attr('table_id', None)
+
         super().__init__(base_id=_base_id, table_id=_table_id)
         self._fields_values = {}
         self._orig_fields_values = {}
@@ -201,19 +206,19 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
     def created_timestamp(self) -> Optional[datetime.datetime]:
         return self._created_timestamp
 
-    def delete(self) -> None:
+    async def delete(self) -> None:
         """
         Delete the record from Airtable.
         """
         from pyrtable.context import get_default_context
-        get_default_context().delete(self.__class__, self)
+        await get_default_context().delete(self.__class__, self)
 
-    def save(self) -> None:
+    async def save(self) -> None:
         """
         Save the record to Airtable.
         """
         from pyrtable.context import get_default_context
-        get_default_context().save(self.__class__, self)
+        await get_default_context().save(self.__class__, self)
 
     def encode_to_airtable(self, include_non_dirty_fields=False) -> Dict[str, Any]:
         result = {}

@@ -13,12 +13,12 @@ REGION_FIELDS_OPT=--fields='Nome'
 CITY_FIELDS_OPT=--fields='Nome,População 2010,Porte,Capital?'
 
 
-#$EXECUTABLE municipios recLyBCK45O1od8Li
-#$EXECUTABLE municipios rec1bjgfb5qTHfEeX
-#$EXECUTABLE municipios rec00000000000000  # nonexistent
+#$EXECUTABLE municipios --record-id=recLyBCK45O1od8Li
+#$EXECUTABLE municipios --record-id=rec1bjgfb5qTHfEeX
+#$EXECUTABLE municipios --record-id=rec00000000000000  # nonexistent
 
-$EXECUTABLE regioes recf3tnhMRerrI2s9
-$EXECUTABLE regioes rec00000000000000  # nonexistent
+#$EXECUTABLE regioes --record-id=recf3tnhMRerrI2s9
+#$EXECUTABLE regioes --record-id=rec00000000000000  # nonexistent
 
 #$EXECUTABLE $CITY_FIELDS_OPT --filter-formula='({Capital?})' municipios
 
@@ -34,3 +34,13 @@ $EXECUTABLE regioes rec00000000000000  # nonexistent
 #$EXECUTABLE $CITY_FIELDS_OPT --filter-formula='{População 2010}>=200000' municipios
 #$EXECUTABLE $CITY_FIELDS_OPT --filter-formula='AND({População 2010}>=150000,{População 2010}<=200000)' municipios
 #$EXECUTABLE $CITY_FIELDS_OPT --filter-formula='AND({Região}="Nordeste",{Porte}="Médio")' municipios
+
+RECORD_ID=$($EXECUTABLE --method=POST \
+    --json-data="{\"records\": [{\"fields\": {\"Nome\": \"(test)\", \"População 2010\": 12345, \"Porte\": \"Médio\"}}]}" \
+    --print-records-ids \
+    municipios)
+$EXECUTABLE --method=DELETE --record-id="${RECORD_ID}" municipios
+
+#$EXECUTABLE --method=DELETE \
+#    --json-data="{\"records\": [\"${RECORD_ID}\"]}" \
+#    municipios

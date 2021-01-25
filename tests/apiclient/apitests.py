@@ -3,8 +3,9 @@ import os
 import sys
 import threading
 import unittest
+from functools import cached_property
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # noinspection PyProtectedMember
 from pyrtable._baseandtable import _BaseAndTableProtocol
@@ -19,9 +20,25 @@ class MockupHTTPRequestHandler(BaseHTTPRequestHandler):
     def mockup_dir(self):
         return os.path.join('.', 'server_mockup_data')
 
+    @cached_property
+    def request_data(self) -> Optional[bytes]:
+        content_length = self.headers['Content-Length']
+        if content_length is None:
+            return None
+        return self.rfile.read(int(content_length))
+
+    @property
+    def request_json(self) -> Optional[Any]:
+        import simplejson
+
+        request_data = self.request_data
+        if request_data is None:
+            return None
+        return simplejson.loads(request_data)
+
     def _get_request_file_path(self) -> str:
         from .utils import build_request_file_name
-        file_name = build_request_file_name(method=self.command, url=self.path)
+        file_name = build_request_file_name(method=self.command, url=self.path, data=self.request_json)
         return os.path.join(self.mockup_dir, file_name)
 
     def _load_request_data(self) -> Dict[str, Any]:
@@ -49,7 +66,23 @@ class MockupHTTPRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(request_data['response']['content'].encode('utf-8'))
 
     # noinspection PyPep8Naming
+    def do_DELETE(self):
+        self._do_any_request()
+
+    # noinspection PyPep8Naming
     def do_GET(self):
+        self._do_any_request()
+
+    # noinspection PyPep8Naming
+    def do_PATCH(self):
+        self._do_any_request()
+
+    # noinspection PyPep8Naming
+    def do_POST(self):
+        self._do_any_request()
+
+    # noinspection PyPep8Naming
+    def do_PUT(self):
         self._do_any_request()
 
 
@@ -162,3 +195,13 @@ class APITests(unittest.IsolatedAsyncioTestCase):
         cities = [f async for f in CityRecord.objects.filter(name='Bom Jesus')]
         self.assertEqual(len(cities), 5)
         self.assertTrue(all(city.name == 'Bom Jesus' for city in cities))
+
+    async def test_basic_crud(self):
+        city = CityRecord(name='(test)', population=12345, size=CitySize.MEDIUM, is_capital=False)
+        self.assertE‘qual(city.id, None)
+
+        await city.save()
+        self.assertNotEqual(city.id, None)
+
+        await city.delete()
+        self.assertEqual(city.id, None)

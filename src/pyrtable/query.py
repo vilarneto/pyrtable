@@ -1,6 +1,6 @@
 import abc
 import collections.abc
-from typing import TYPE_CHECKING, Generic, Iterable, Iterator, TypeVar, Type, Optional, AsyncIterable, AsyncIterator
+from typing import TYPE_CHECKING, Generic, TypeVar, Type, Optional, AsyncIterable, AsyncIterator
 
 from ._baseandtable import _BaseAndTableSettableMixin
 

@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional, Any, Dict
+from typing import Optional, Any, Dict, List
 
 import click
 
@@ -53,21 +53,23 @@ def cleanup_output_dir(output_dir: str):
         os.unlink(os.path.join(output_dir, non_referenced_json_file))
 
 
-def remove_index_data(output_dir: str, method: str, first_page_url: str) -> None:
+def remove_index_data(output_dir: str, method: str, first_page_url: str, data: Any) -> None:
     first_page_url_path = strip_url_path(first_page_url)
 
     all_index_data = load_index_data(output_dir)
     all_index_data = [entry for entry in all_index_data
                       if not (entry['method'] == method
-                              and entry['first_page_url_path'] == first_page_url_path)]
+                              and entry['first_page_url_path'] == first_page_url_path
+                              and entry.get('data') == data)]
     save_index_data(output_dir, all_index_data)
 
 
-def add_index_data(index_data: Dict[str, Any], output_dir: str) -> None:
+def add_index_data(index_data: Dict[str, Any], output_dir: str, data: Any) -> None:
     all_index_data = load_index_data(output_dir)
     all_index_data = [entry for entry in all_index_data
                       if not (entry['method'] == index_data['method']
-                              and entry['url_path'] == index_data['url_path'])]
+                              and entry['url_path'] == index_data['url_path']
+                              and entry.get('data') == data)]
 
     all_index_data.append(index_data)
     save_index_data(output_dir, all_index_data)
@@ -80,21 +82,28 @@ def add_index_data(index_data: Dict[str, Any], output_dir: str) -> None:
               help='List of fields to fetch.')
 @click.option('--filter-formula', '-f',
               help='Filter formula.')
+@click.option('--json-data', '-d',
+              help='JSON data to send as part of the request.')
 @click.option('--method', '-m', default='GET', type=str.upper,
               help='Request method, such as GET, POST, PATCH, DELETE (default=GET).')
 @click.option('--output-dir', '-o', default=os.path.join('.', 'server_mockup_data'),
               help='Output directory (default="./server_mockup_data").')
 @click.option('--page-size', '-n', type=int,
               help='Max. number of records returned per page.')
+@click.option('--print-records-ids', is_flag=True, default=False,
+              help='Print records IDs from the server response to stdout.')
+@click.option('--record-id',
+              help='Record ID (for single-record requests).')
 @click.argument('table_name')
-@click.argument('record_id', required=False, default=None)
 def cli(method: str,
         output_dir: str,
+        print_records_ids: bool,
         table_name: str,
-        record_id: Optional[str],
+        record_id: Optional[str] = None,
         auth_key: Optional[str] = None,
         fields: Optional[str] = None,
         filter_formula: Optional[str] = None,
+        json_data: Optional[str] = None,
         page_size: Optional[int] = None):
     """
     Send a request to the Airtable server and save the results on disk as a regression test case.
@@ -103,6 +112,8 @@ def cli(method: str,
     import urllib.parse
     import aiohttp
     import simplejson
+
+    extra_query_params = []
 
     table_name = {
         'municipios': 'Municípios',
@@ -115,6 +126,9 @@ def cli(method: str,
             raise RuntimeError('--fields cannot be used when a record ID is given')
         if filter_formula is not None:
             raise RuntimeError('--filter-formula cannot be used when a record ID is given')
+
+    if json_data is not None:
+        json_data = simplejson.loads(json_data)
 
     if auth_key is None:
         from getpass import getpass
@@ -130,6 +144,14 @@ def cli(method: str,
     if fields is not None:
         for field in fields.split(','):
             url_query_params.append(('fields[]', field))
+
+    for extra_query_param in extra_query_params:
+        try:
+            key, value = extra_query_param.split('=', 1)
+        except ValueError:
+            raise RuntimeError('Extra query parameters must be given in the format KEY=VALUE')
+
+        url_query_params.append((key, value))
 
     if filter_formula is not None:
         url_query_params.append(('filterByFormula', filter_formula))
@@ -156,15 +178,15 @@ def cli(method: str,
         first_page_url_path = strip_url_path(url)
         total_record_count = 0
 
-        file_name = build_request_file_name(method, url)
-        remove_index_data(output_dir=output_dir, method=method, first_page_url=url)
+        file_name = build_request_file_name(method, url, data=json_data)
+        remove_index_data(output_dir=output_dir, method=method, first_page_url=url, data=json_data)
 
         async with aiohttp.ClientSession() as session:
             while url is not None:
                 page_number += 1
                 print(f'Getting page {page_number}', file=sys.stderr)
 
-                async with session.request(method, url, headers=headers) as response:
+                async with session.request(method, url, headers=headers, json=json_data) as response:
                     response_status = response.status
                     response_headers = response.headers
                     response_content = await response.text()
@@ -173,7 +195,7 @@ def cli(method: str,
                 next_offset = (response_data or {}).get('offset')
                 if next_offset is not None:
                     next_url = replace_query_param(url, 'offset', next_offset)
-                    next_file_name = build_request_file_name(method, next_url)
+                    next_file_name = build_request_file_name(method, next_url, data=json_data)
                 else:
                     next_url = None
                     next_file_name = None
@@ -181,6 +203,12 @@ def cli(method: str,
                 record_list = (response_data or {}).get('records')
                 if record_list is not None:
                     record_count = len(record_list)
+
+                    if print_records_ids:
+                        for record in record_list:
+                            if isinstance(record, dict) and 'id' in record:
+                                print(record['id'])
+
                 elif record_id is not None and response_status == 200:
                     record_count = 1
                 else:
@@ -216,13 +244,14 @@ def cli(method: str,
                 index_data = {
                     'method': method,
                     'original_url': url,
+                    'data': json_data,
                     'record_count': record_count,
                     'url_path': strip_url_path(url),
                     'first_page_url_path': first_page_url_path,
                     'file_name': file_name,
                     'page_number': page_number
                 }
-                add_index_data(index_data, output_dir=output_dir)
+                add_index_data(index_data, output_dir=output_dir, data=json_data)
 
                 previous_file_name = file_name
                 previous_url = url
