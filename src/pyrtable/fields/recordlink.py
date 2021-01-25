@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import collections.abc
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Optional, Union, Type, List, Iterator, Iterable, Any, Protocol, TypeVar, Generic
+from typing import TYPE_CHECKING, Optional, Union, Type, List, Iterator, Iterable, Any, Protocol, TypeVar, Generic, \
+    Callable
 
 from pyrtable._baseandtable import _BaseAndTableProtocol, BaseAndTable
 from pyrtable.fields import BaseField
@@ -12,61 +13,62 @@ if TYPE_CHECKING:
     from pyrtable.record import BaseRecord
 
 
-RT = TypeVar('RT', bound='BaseRecord')
-
-
-class _RecordFetcher(Protocol):
-    async def __call__(self, record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> 'BaseRecord':
-        ...
-
-
 class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
-    _fetcher: Optional[_RecordFetcher]
+    _linked_class: Union[Type[BaseRecord], str]
 
     def __init__(self, column_name: str,
-                 fetcher: Optional[_RecordFetcher] = None,
-                 linked_class: Optional[Union[Type[BaseRecord], str]] = None,
+                 linked_class: Union[Type[BaseRecord], str],
                  *args, **kwargs):
-        if fetcher is not None and linked_class is not None:
-            raise ValueError('`fetcher` and `linked_class` cannot be both specified')
+        from pyrtable.record import BaseRecord
 
-        if linked_class is not None:
-            from pyrtable.record import BaseRecord
+        async def fetcher(linked_record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> BaseRecord:
+            nonlocal linked_class
 
-            async def fetcher(linked_record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> BaseRecord:
-                nonlocal linked_class
+            query = linked_class.objects
+            if base_and_table.base_id is not None:
+                query = query.set_base_id(base_and_table.base_id)
+            if base_and_table.table_id is not None:
+                query = query.set_table_id(base_and_table.table_id)
+            return await query.get(record_id=linked_record_id)
 
-                if isinstance(linked_class, str):
-                    import re
-
-                    module_name, class_name = re.fullmatch(r'(.*)\.(.+)', linked_class).groups()
-                    module = __import__(module_name, fromlist=[class_name])
-                    linked_class = getattr(module, class_name)
-
-                query = linked_class.objects
-                if base_and_table.base_id is not None:
-                    query = query.set_base_id(base_and_table.base_id)
-                if base_and_table.table_id is not None:
-                    query = query.set_table_id(base_and_table.table_id)
-                return await query.get(record_id=linked_record_id)
-
+        self._linked_class = linked_class
         self._fetcher = fetcher
 
         super().__init__(column_name, *args, **kwargs)
+
+    def get_linked_class(self) -> Type[BaseRecord]:
+        if isinstance(self._linked_class, str):
+            import re
+
+            module_name, class_name = re.fullmatch(r'(.*)\.(.+)', self._linked_class).groups()
+            module = __import__(module_name, fromlist=[class_name])
+            self._linked_class = getattr(module, class_name)
+
+        return self._linked_class
+
+    def get_linked_base_and_table(self) -> '_BaseAndTableProtocol':
+        from pyrtable._baseandtable import BaseAndTable
+
+        linked_class = self.get_linked_class()
+        # noinspection PyProtectedMember
+        base_id = linked_class._get_meta_attr('base_id', None)
+        # noinspection PyProtectedMember
+        table_id = linked_class._get_meta_attr('table_id', None)
+        return BaseAndTable(base_id, table_id)
 
 
 # class RecordLink(Generic[RT], BaseAndTable):
 class RecordLink(BaseAndTable):
     _id: Optional[str] = None
     _record: Optional[BaseRecord] = None
-    _fetcher: Optional[_RecordFetcher] = None
+    _fetcher: Callable = None
 
     def __init__(self, *,
                  base_and_table: '_BaseAndTableProtocol',
-                 other: Optional[RecordLink[RT]] = None,
+                 other: Optional[RecordLink] = None,
                  record_id: Optional[str] = None,
-                 record: Optional[RT] = None,
-                 fetcher: Optional[_RecordFetcher] = None):
+                 record: Optional[BaseRecord] = None,
+                 fetcher: Optional[Callable] = None):
         super().__init__(base_id=base_and_table.base_id, table_id=base_and_table.table_id)
 
         if other is not None:
@@ -81,6 +83,9 @@ class RecordLink(BaseAndTable):
         if fetcher is not None:
             self._fetcher = fetcher
 
+        if self._fetcher is None:
+            raise ValueError('fetcher must be specified somehow')
+
     @property
     def id(self) -> str:
         if self._record is not None and self._record.id is not None:
@@ -89,7 +94,7 @@ class RecordLink(BaseAndTable):
             raise ValueError('Reference to unsaved or deleted record')
         return self._id
 
-    async def get_record(self) -> RT:
+    async def get_record(self) -> BaseRecord:
         if self._record is None:
             if self._fetcher is None:
                 # @TODO Better error message
@@ -150,6 +155,7 @@ class SingleRecordLinkField(BaseRecordLinkField):
             return value
         if isinstance(value, BaseRecord):
             base_and_table.ensure_base_and_table_match(value)
+            # @TODO Missing fetcher
             return RecordLink(base_and_table=base_and_table, record=value)
         return super().validate(value, base_and_table=base_and_table)
 
@@ -165,7 +171,7 @@ class SingleRecordLinkField(BaseRecordLinkField):
         if len(value) > 1:
             raise ValueError('Multiple records returned')
 
-        return RecordLink(base_and_table=base_and_table, record_id=value[0], fetcher=self._fetcher)
+        return RecordLink(base_and_table=self.get_linked_base_and_table(), record_id=value[0], fetcher=self._fetcher)
 
     def encode_to_airtable(self, value: RecordLink) -> Optional[List[str]]:
         if not value:
@@ -175,12 +181,12 @@ class SingleRecordLinkField(BaseRecordLinkField):
 
 class _RecordLinkCollection(BaseAndTable, collections.abc.Collection):
     _items: List[RecordLink]
-    _fetcher: Optional[_RecordFetcher] = None
+    _fetcher: Optional[Callable] = None
 
     def __init__(self, *,
                  base_and_table: '_BaseAndTableProtocol',
                  other: Optional[_RecordLinkCollection] = None,
-                 fetcher: Optional[_RecordFetcher] = None):
+                 fetcher: Optional[Callable] = None):
         super(_RecordLinkCollection, self).__init__(base_id=base_and_table.base_id, table_id=base_and_table.table_id)
 
         self._items = []
@@ -294,9 +300,9 @@ class MultipleRecordLinkField(BaseRecordLinkField):
                  base_and_table: '_BaseAndTableProtocol') -> Any:
         if isinstance(value, _RecordLinkCollection):
             base_and_table.ensure_base_and_table_match(value)
-            return _RecordLinkCollection(base_and_table=base_and_table, other=value)
+            return _RecordLinkCollection(base_and_table=self.get_linked_base_and_table(), other=value)
         if isinstance(value, collections.abc.Iterable):
-            result = _RecordLinkCollection(base_and_table=base_and_table, fetcher=self._fetcher)
+            result = _RecordLinkCollection(base_and_table=self.get_linked_base_and_table(), fetcher=self._fetcher)
             for record_id in value or []:
                 result += record_id
             return result
@@ -304,11 +310,11 @@ class MultipleRecordLinkField(BaseRecordLinkField):
         return super().validate(value, base_and_table=base_and_table)
 
     def clone_value(self, value: _RecordLinkCollection) -> _RecordLinkCollection:
-        return _RecordLinkCollection(base_and_table=value, other=value)
+        return _RecordLinkCollection(base_and_table=self.get_linked_base_and_table(), other=value)
 
     def decode_from_airtable(self, value: Optional[List[str]], base_and_table: '_BaseAndTableProtocol') \
             -> _RecordLinkCollection:
-        result = _RecordLinkCollection(base_and_table=base_and_table, fetcher=self._fetcher)
+        result = _RecordLinkCollection(base_and_table=self.get_linked_base_and_table(), fetcher=self._fetcher)
         for record_id in value or []:
             result += record_id
         return result

@@ -33,9 +33,9 @@ class _BaseAndTableProtocol(Protocol, metaclass=abc.ABCMeta):
         return url
 
     def ensure_base_and_table_match(self, other: '_BaseAndTableProtocol'):
-        if self.base_id != other.base_id:
+        if self.base_id is not None and other.base_id is not None and self.base_id != other.base_id:
             raise ValueError('Base IDs do not match')
-        if self.table_id != other.table_id:
+        if self.table_id is not None and other.table_id is not None and self.table_id != other.table_id:
             raise ValueError('Table IDs do not match')
 
     def _validate_base_table_ids(self) -> None:

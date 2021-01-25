@@ -164,7 +164,7 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
         if _table_id is None:
             _table_id = self._get_meta_attr('table_id', None)
 
-        super().__init__(base_id=_base_id, table_id=_table_id)
+        super().__init__(base_id=_base_id, table_id=_table_id, record_cls=type(self))
         self._fields_values = {}
         self._orig_fields_values = {}
 
