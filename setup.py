@@ -17,9 +17,23 @@ setup(
     version='0.7.4',
     description='Django-inspired library to interface with Airtable',
     python_requires='==3.*,>=3.8.0',
+    project_urls={
+        "documentation": "https://pyrtable.readthedocs.io/",
+        "repository": "https://github.com/vilarneto/pyrtable"
+    },
     author='Vilar da Camara Neto',
     author_email='vilarneto@gmail.com',
     license='MIT',
+    classifiers=[
+        'Development Status :: 4 - Beta', 'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: MIT License', 'Natural Language :: English',
+        'Operating System :: OS Independent', 'Programming Language :: Python',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'Topic :: Software Development'
+    ],
     packages=[
         'pyrtable', 'pyrtable.context', 'pyrtable.fields', 'pyrtable.filters'
     ],
@@ -29,10 +43,4 @@ setup(
         'deprecated', 'pytz', 'pyyaml==5.*,>=5.1.0', 'requests==2.*,>=2.22.0',
         'simplejson==3.*,>=3.16.0'
     ],
-    extras_require={
-        "dev": [
-            "click==7.*,>=7.1.2", "ipython", "sphinx==3.*,>=3.0.3",
-            "twine==3.*,>=3.3.0"
-        ]
-    },
 )
