@@ -14,7 +14,7 @@ readme = ''
 setup(
     long_description=readme,
     name='pyrtable',
-    version='0.7.4',
+    version='0.7.5',
     description='Django-inspired library to interface with Airtable',
     python_requires='==3.*,>=3.8.0',
     project_urls={
