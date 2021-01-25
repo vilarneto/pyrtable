@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Optional, Union, Type, List, Iterator, Iterable, Any, Protocol
+from typing import TYPE_CHECKING, Optional, Union, Type, List, Iterator, Iterable, Any
 
 from pyrtable._baseandtable import _BaseAndTableProtocol, BaseAndTable
 from pyrtable.fields import BaseField
@@ -12,13 +12,7 @@ if TYPE_CHECKING:
     from pyrtable.record import BaseRecord
 
 
-class _RecordFetcher(Protocol):
-    def __call__(self, record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> 'BaseRecord':
-        ...
-
-
 class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
-    _fetcher: _RecordFetcher
     _linked_class: Union[Type[BaseRecord], str]
 
     def __init__(self, column_name: str,
