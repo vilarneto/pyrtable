@@ -1,5 +1,5 @@
 import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
 
 if TYPE_CHECKING:
@@ -26,16 +26,35 @@ class StringField(BaseField):
 
 
 class IntegerField(BaseField):
-    def decode_from_airtable(self, value: Optional[int], base_and_table: '_BaseAndTableProtocol') -> Optional[int]:
-        return int(value) if value is not None else None
+    def decode_from_airtable(
+            self,
+            value: Optional[Union[int, Dict]],
+            base_and_table: '_BaseAndTableProtocol') -> Optional[int]:
+        if value is None:
+            return None
+        elif isinstance(value, dict):
+            if value.get('specialValue') == 'NaN':
+                return None
+            raise ValueError(value)
+        return int(value)
 
     def encode_to_airtable(self, value: Optional[int]) -> Optional[int]:
         return value
 
 
 class FloatField(BaseField):
-    def decode_from_airtable(self, value: Optional[float], base_and_table: '_BaseAndTableProtocol') -> Optional[float]:
-        return float(value) if value is not None else None
+    def decode_from_airtable(
+            self,
+            value: Optional[Union[float, Dict]],
+            base_and_table: '_BaseAndTableProtocol') -> Optional[float]:
+        if value is None:
+            return None
+        elif isinstance(value, dict):
+            if value.get('specialValue') == 'NaN':
+                import math
+                return math.nan
+            raise ValueError(value)
+        return float(value)
 
     def encode_to_airtable(self, value: Optional[float]) -> Optional[float]:
         return value
