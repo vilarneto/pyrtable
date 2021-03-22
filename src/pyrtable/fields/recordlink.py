@@ -64,14 +64,14 @@ class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
 class _RecordLink(BaseAndTable):
     _id: Optional[str] = None
     _record: Optional[BaseRecord] = None
-    _fetcher: Optional[_RecordFetcher] = None
+    _fetcher = None
 
     def __init__(self, *,
                  base_and_table: '_BaseAndTableProtocol',
                  other: Optional[_RecordLink] = None,
                  record_id: Optional[str] = None,
                  record: Optional[BaseRecord] = None,
-                 fetcher: Optional[_RecordFetcher] = None):
+                 fetcher=None):
         super().__init__(base_id=base_and_table.base_id, table_id=base_and_table.table_id)
 
         if other is not None:
@@ -155,8 +155,9 @@ class SingleRecordLinkField(BaseRecordLinkField):
         if isinstance(value, _RecordLink):
             return value
         if isinstance(value, BaseRecord):
-            base_and_table.ensure_base_and_table_match(value)
-            return _RecordLink(base_and_table=base_and_table, record=value)
+            linked_base_and_table = self.get_linked_base_and_table()
+            linked_base_and_table.ensure_base_and_table_match(value)
+            return _RecordLink(base_and_table=linked_base_and_table, record=value)
         return super().validate(value, base_and_table=base_and_table)
 
     def clone_value(self, value: Optional[_RecordLink]) -> Optional[_RecordLink]:
@@ -181,12 +182,12 @@ class SingleRecordLinkField(BaseRecordLinkField):
 
 class _RecordLinkCollection(BaseAndTable, collections.abc.Collection):
     _items: List[_RecordLink]
-    _fetcher: Optional[_RecordFetcher] = None
+    _fetcher = None
 
     def __init__(self, *,
                  base_and_table: '_BaseAndTableProtocol',
                  other: Optional[_RecordLinkCollection] = None,
-                 fetcher: Optional[_RecordFetcher] = None):
+                 fetcher=None):
         super(_RecordLinkCollection, self).__init__(base_id=base_and_table.base_id, table_id=base_and_table.table_id)
 
         self._items = []
@@ -298,8 +299,9 @@ class MultipleRecordLinkField(BaseRecordLinkField):
                  value: Optional[Union[_RecordLinkCollection, Iterable[Any]]],
                  base_and_table: '_BaseAndTableProtocol') -> Any:
         if isinstance(value, _RecordLinkCollection):
-            base_and_table.ensure_base_and_table_match(value)
-            return _RecordLinkCollection(base_and_table=self.get_linked_base_and_table(), other=value)
+            linked_base_and_table = self.get_linked_base_and_table()
+            linked_base_and_table.ensure_base_and_table_match(value)
+            return _RecordLinkCollection(base_and_table=linked_base_and_table, other=value)
         if isinstance(value, collections.abc.Iterable):
             result = _RecordLinkCollection(base_and_table=self.get_linked_base_and_table(), fetcher=self._fetcher)
             for record_id in value or []:
