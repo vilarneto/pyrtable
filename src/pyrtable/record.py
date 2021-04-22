@@ -262,10 +262,11 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
                 import inspect
 
                 signature = inspect.signature(function)
-                if 'base_id' in signature.parameters:
+                # Can base_id be sent as a keyword argument?
+                if 'base_id' in signature.parameters \
+                        or any(parameter.kind is inspect.Parameter.VAR_KEYWORD
+                               for parameter in signature.parameters.values()):
                     function = functools.partial(function, base_id=base_id)
-                else:
-                    raise ValueError('Cannot use base_id')
 
             result['Authorization'] = 'Bearer %s' % function()
         else:
