@@ -125,7 +125,7 @@ Or, if you want a really nice `tqdm <https://tqdm.github.io>`_ progress bar::
                       desc='Updating Airtable records'):
             pass
 
-Pyrtable also has some extra tools to cache data and read authentication keys from external JSON/YAML files check out the :class:`APIKeyFromSecretsFileMixin` mixin class. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
+Pyrtable also has some extra tools to cache data and read authentication keys from external JSON/YAML files -- check out the :class:`APIKeyFromSecretsFileMixin` mixin class. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
 
 Compatibility
 -------------
