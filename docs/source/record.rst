@@ -56,9 +56,21 @@ The basic way to provide the API Key to Pyrtable is to implement a class method 
 
         # other class stuff here
 
+If this class method accepts a `base_id` parameter, then the caller will fill it -- this may be used, e.g., for a dictionary-based lookup::
+
+    class MyTableRecord(BaseRecord):
+        @classmethod
+        def get_api_key(cls, base_id):
+            return {
+                '<BASE_ID_1>: '<API KEY_1>',
+                '<BASE_ID_2>: '<API KEY_2>',
+            }[base_id]
+
+        # other class stuff here
+
 .. warning::
 
-    Putting the raw API Key in the source code itself is a bad security practice, as anyone with access to your code will have **full R/W access to all your Airtable bases**. API Keys are as sensitive as passwords; they should be securely stored in separate, read-protected files or using OS keychain services. See the :class:`APIKeyFromSecretsFileMixin` below.
+    Putting the raw API Key in the source code itself is a *bad security practice*, as anyone with access to your code will have **full R/W access to all your Airtable bases**. API Keys are as sensitive as passwords; they should be securely stored in separate, private files or using OS keychain services. See the :class:`APIKeyFromSecretsFileMixin` below.
 
 .. _APIKeyFromSecretsFileMixin:
 

@@ -39,7 +39,7 @@ To use Pyrtable you will first need to subclass the :class:`BaseRecord` class. O
             table_id = 'Employees'     # @TODO change this value
 
         @classmethod
-        def get_api_key(cls, base_id):
+        def get_api_key(cls):
             return 'keyABCDE12345'     # @TODO change this value
 
         name = StringField('Name')

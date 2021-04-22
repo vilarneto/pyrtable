@@ -34,7 +34,7 @@ Ok, let's have a taste of how one can define a class that maps onto records of a
 
        @classmethod
        def get_api_key(cls):
-           # The API key can be generated in you Airtable Account page. 
+           # The API key can be generated in you Airtable Account page.
            # DO NOT COMMIT THIS STRING!
            return 'keyABCDE12345'
 
@@ -110,7 +110,7 @@ Pyrtable also has some extra tools to cache data and read authentication keys fr
 Compatibility
 -------------
 
-Pyrtable is compatible with Python 3.7 and 3.8. Previous 3.x versions may or may not work. Python 2.x is not supported at all. 
+Pyrtable is compatible with Python 3.8 and 3.9. Python 2.x is not supported at all.
 
 Documentation
 -------------
