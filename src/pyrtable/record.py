@@ -149,6 +149,8 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
         instance._fields = {}
 
         for attr_name, field in cls.iter_fields():
+            if attr_name in ('id', 'created_timestamp'):
+                raise AttributeError(f'"{attr_name}" is a reserved field name and cannot be used')
             field.attr_name = attr_name
             instance._fields[attr_name] = field
             field._record = instance
