@@ -101,7 +101,7 @@ with ThreadPoolExecutor(max_workers=10) as executor:
         pass
 ```
 
-Pyrtable also has some extra tools to cache data and read authentication keys from external JSON/YAML files check out the `APIKeyFromSecretsFileMixin` mixin class. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
+Pyrtable also has some extra tools to cache data and read authentication keys from external JSON/YAML files -- check out the `APIKeyFromSecretsFileMixin` mixin class. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
 
 ## Compatibility
 
@@ -119,4 +119,4 @@ Want to try it out, contribute, suggest, offer a hand? Great! The project is ava
 
 Pyrtable is released under [MIT license](https://opensource.org/licenses/MIT).
 
-Copyright (c) 2020,2021 Vilar Fiuza da Camara Neto
+Copyright (c) 2020,2021 by Vilar Fiuza da Camara Neto

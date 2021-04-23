@@ -14,10 +14,17 @@ Airtable always allows empty values to any cell. In general, these are represent
 
 You don't need to map all Airtable fields; it's OK to declare only some of the fields in Python.
 
+Neither ``id`` nor ``created_timestamp`` can be used as field names as they are reserved for two special fields described below.
+
 The ``id`` field
 ----------------
 
 All record classes have an automatically generated ``.id`` field. It will hold either the Airtable record identifier (a string) or, for deleted and created-but-not-saved records, the ``None`` value.
+
+The ``created_timestamp`` field
+-------------------------------
+
+All record classes have an automatically generated ``.created_timestamp`` field. It will hold the record creation timestamp as informed by Airtable, or ``None`` if it was not yet saved.
 
 Field arguments
 ---------------
@@ -32,7 +39,7 @@ A string. The name of the field as defined in Airtable.
 Beware of field names — not all characters are supported by Pyrtable, even if they are accepted in Airtable. Currently only letters (including diacritics), numbers, spaces, dots, hyphens, underlines are accepted.
 
 ``read_only``
-^^^^^^^^^^^^^^
+^^^^^^^^^^^^^
 
 A boolean (optional, defaults to ``False``). If ``True``, changes to that field are forbidden in Python. You can use this to guarantee that Pyrtable will never update the corresponding Airtable field. Read-only fields are still writeable when creating records.
 
