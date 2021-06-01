@@ -3,7 +3,7 @@ from enum import Enum
 
 
 def quote_column_name(column_name: str) -> str:
-    return '{%s}' % column_name
+    return '{%s}' % re.sub(r'[}\\]', lambda ch: '\\' + ch.group(0), column_name)
 
 
 def quote_value(value) -> str:
