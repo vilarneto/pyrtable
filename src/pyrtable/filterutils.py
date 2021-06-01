@@ -10,7 +10,7 @@ def quote_value(value) -> str:
     import datetime
 
     if isinstance(value, str):
-        return '"%s"' % re.sub(r'(["\'\\])', lambda ch: '\\' + ch.group(0), value)
+        return '"%s"' % re.sub(r'(["\\])', lambda ch: '\\' + ch.group(0), value)
     if isinstance(value, bool):
         return 'TRUE()' if value else 'FALSE()'
     if isinstance(value, (int, float)):
