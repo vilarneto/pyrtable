@@ -1,4 +1,5 @@
 import datetime
+import os
 import re
 from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, Union, List, Callable, Tuple, Protocol
 
@@ -254,25 +255,9 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
     def get_request_headers(cls, defaults=None, base_id: Optional[str] = None) -> Dict[str, str]:
         if not defaults:
             defaults = {}
+
         result = dict(**defaults)
-
-        if hasattr(cls, 'get_api_key'):
-            function = cls.get_api_key
-
-            if base_id is not None:
-                import functools
-                import inspect
-
-                signature = inspect.signature(function)
-                # Can base_id be sent as a keyword argument?
-                if 'base_id' in signature.parameters \
-                        or any(parameter.kind is inspect.Parameter.VAR_KEYWORD
-                               for parameter in signature.parameters.values()):
-                    function = functools.partial(function, base_id=base_id)
-
-            result['Authorization'] = 'Bearer %s' % function()
-        else:
-            result['Authorization'] = 'Bearer %s' % cls._get_meta_attr('api_key')
+        result['Authorization'] = 'Bearer %s' % cls._get_api_key(base_id=base_id)
 
         return result
 
@@ -297,6 +282,28 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
             return default_value
 
         raise AttributeError("'Meta.%s' attribute is not defined for class %r" % (attr_name, cls.__name__))
+
+    @classmethod
+    def _get_api_key(cls, base_id: Optional[str] = None) -> Optional[str]:
+        if hasattr(cls, 'get_api_key'):
+            function = cls.get_api_key
+
+            if base_id is not None:
+                import functools
+                import inspect
+
+                signature = inspect.signature(function)
+                # Can base_id be sent as a keyword argument?
+                if 'base_id' in signature.parameters \
+                        or any(parameter.kind is inspect.Parameter.VAR_KEYWORD
+                               for parameter in signature.parameters.values()):
+                    function = functools.partial(function, base_id=base_id)
+
+            result = function()
+        else:
+            result = cls._get_meta_attr('api_key', default_value=None)
+
+        return result
 
     @classmethod
     def get_class_base_id(cls) -> str:

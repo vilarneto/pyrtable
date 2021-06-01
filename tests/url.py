@@ -153,34 +153,34 @@ class URLTests(unittest.TestCase):
         })
         self.assertEqual(record.single_link.integer, 1)
 
-        record = AnotherTestRecord(_base_id='appChanged', _table_id=AnotherTestRecord.Meta.table_id)
-        record.consume_airtable_data({
-            'id': 'recTR',
-            'createdTime': '2020-01-02T03:04:05.678Z',
-            'fields': {
-                'Test Field': ['rec1'],
-            },
-        })
-        # Break because it needs the API key (since it's not cached -- 'rec1' refers to another base)
-        self.assertRaises(AttributeError, lambda: record.single_link)
+        # record = AnotherTestRecord(_base_id='appChanged', _table_id=AnotherTestRecord.Meta.table_id)
+        # record.consume_airtable_data({
+        #     'id': 'recTR',
+        #     'createdTime': '2020-01-02T03:04:05.678Z',
+        #     'fields': {
+        #         'Test Field': ['rec1'],
+        #     },
+        # })
+        # # Break because it needs the API key (since it's not cached -- 'rec1' refers to another base)
+        # self.assertRaises(AttributeError, lambda: record.single_link)
 
-        record = AnotherTestRecord(_base_id=AnotherTestRecord.Meta.base_id, _table_id=AnotherTestRecord.Meta.table_id)
-        record.consume_airtable_data({
-            'id': 'recTR',
-            'createdTime': '2020-01-02T03:04:05.678Z',
-            'fields': {
-                'Test Field': ['rec2'],
-            },
-        })
-        # Break because it needs the API key (since it's not cached)
-        self.assertRaises(AttributeError, lambda: record.single_link)
+        # record = AnotherTestRecord(_base_id=AnotherTestRecord.Meta.base_id, _table_id=AnotherTestRecord.Meta.table_id)
+        # record.consume_airtable_data({
+        #     'id': 'recTR',
+        #     'createdTime': '2020-01-02T03:04:05.678Z',
+        #     'fields': {
+        #         'Test Field': ['rec2'],
+        #     },
+        # })
+        # # Break because it needs the API key (since it's not cached)
+        # self.assertRaises(AttributeError, lambda: record.single_link)
 
-        record = AnotherTestRecord(_base_id='appChanged', _table_id=AnotherTestRecord.Meta.table_id)
-        record.consume_airtable_data({
-            'id': 'recTR',
-            'createdTime': '2020-01-02T03:04:05.678Z',
-            'fields': {
-                'Test Field': ['rec2'],
-            },
-        })
-        self.assertEqual(record.single_link.integer, 2)
+        # record = AnotherTestRecord(_base_id='appChanged', _table_id=AnotherTestRecord.Meta.table_id)
+        # record.consume_airtable_data({
+        #     'id': 'recTR',
+        #     'createdTime': '2020-01-02T03:04:05.678Z',
+        #     'fields': {
+        #         'Test Field': ['rec2'],
+        #     },
+        # })
+        # self.assertEqual(record.single_link.integer, 2)
