@@ -106,5 +106,8 @@ class BaseAndTable(_BaseAndTableProtocol):
     def table_id(self) -> Optional[str]:
         return self._table_id
 
+    def __repr__(self):
+        return '%s(base_id=%r, table_id=%r)' % (self.__class__.__name__, self._base_id, self._table_id)
+
 
 __all__ = ['_BaseAndTableProtocol', '_BaseAndTableSettableProtocol', '_BaseAndTableSettableMixin', 'BaseAndTable']

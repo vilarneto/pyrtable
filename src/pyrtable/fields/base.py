@@ -68,7 +68,8 @@ class BaseField:
         stripping spaces) and/or raising an exception if the value cannot be accepted.
 
         :param value: The value that's being stored.
-        :param base_and_table: The base-and-table info holder (usually the record itself)
+        :param base_and_table: The base-and-table info holder. Usually the record itself; in case of linked records,
+        this is the base-and-table that holds the link (not the linked one).
         :return: The accepted value for storage.
         :raise: `ValueError` if the value value cannot be accepted.
         """
@@ -79,7 +80,8 @@ class BaseField:
         Decode a field value retrieved through Airtable JSON API into the corresponding Python value.
 
         :param value: The field value retrieved from the server.
-        :param base_and_table: The base-and-table info holder (usually the record itself)
+        :param base_and_table: The base-and-table info holder. Usually the record itself; in case of linked records,
+        this is the base-and-table that holds the link (not the linked one).
         :return: The corresponding Python value.
         """
         raise NotImplementedError()

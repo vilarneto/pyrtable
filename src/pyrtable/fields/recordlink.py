@@ -148,7 +148,7 @@ class SingleRecordLinkField(BaseRecordLinkField):
         value = super().__get__(instance, owner)
         return value.record if value is not None else None
 
-    def validate(self, value: Optional[Union[_RecordLink, Iterable[Any]]], base_and_table: '_BaseAndTableProtocol')\
+    def validate(self, value: Optional[Union[_RecordLink, Iterable[Any]]], base_and_table: '_BaseAndTableProtocol') \
             -> Any:
         from pyrtable.record import BaseRecord
 
@@ -172,7 +172,12 @@ class SingleRecordLinkField(BaseRecordLinkField):
         if len(value) > 1:
             raise ValueError('Multiple records returned')
 
-        return _RecordLink(base_and_table=self.get_linked_base_and_table(), record_id=value[0], fetcher=self._fetcher)
+        # Propagates the base_id of the referencing record
+        linked_base_and_table = BaseAndTable(
+            base_id=base_and_table.base_id,
+            table_id=self.get_linked_base_and_table().table_id)
+
+        return _RecordLink(base_and_table=linked_base_and_table, record_id=value[0], fetcher=self._fetcher)
 
     def encode_to_airtable(self, value: _RecordLink) -> Optional[List[str]]:
         if not value:
