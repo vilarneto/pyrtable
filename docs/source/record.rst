@@ -1,4 +1,6 @@
 .. _Record classes:
+.. index::
+   single: Record classes; Defining
 
 Defining record classes
 =======================
@@ -24,10 +26,16 @@ Details about the missing bits are provided below.
 Values for ``base_id`` and ``table_id``
 ---------------------------------------
 
+.. index::
+   single: base_id
+
 ``base_id``
 ^^^^^^^^^^^
 
 Open the desired base in Airtable, go to “Help > API documentation” (top-right corner) and search for a paragraph containing “The ID of this base is `base_id`”.
+
+.. index::
+   single: table_id
 
 ``table_id``
 ^^^^^^^^^^^^
@@ -38,6 +46,10 @@ Fields definitions
 ------------------
 
 Refer to :ref:`this page <Field classes>` for details about using field classes to define the properties that link to Airtable fields.
+
+.. index::
+   single: Authentication
+   single: API Keys
 
 Authentication methods
 ----------------------
@@ -62,8 +74,8 @@ If this class method accepts a `base_id` parameter, then the caller will fill it
         @classmethod
         def get_api_key(cls, base_id):
             return {
-                '<BASE_ID_1>: '<API KEY_1>',
-                '<BASE_ID_2>: '<API KEY_2>',
+                '<BASE_ID_1>': '<API KEY_1>',
+                '<BASE_ID_2>': '<API KEY_2>',
             }[base_id]
 
         # other class stuff here
@@ -99,6 +111,28 @@ This file is a `YAML file <https://en.wikipedia.org/wiki/YAML>`_ with one of mor
 
     appFGHIJ67890fghij: keyABCDE12345abcde
 
+.. _API Key in environment var:
+.. index::
+   single: Docker; Providing the API Key
+
+Reading the API Key from an environment variable
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This is an alternative to using ``APIKeyFromSecretsFileMixin`` and particularly useful for running Docker containers where all bases are accessible under the same API Key::
+
+    class MyTableRecord(BaseRecord):
+        class Meta:
+            base_id = '<BASE ID>'
+            table_id = '<TABLE ID>'
+
+        @classmethod
+        def get_api_key(cls):
+            return os.getenv('AIRTABLE_API_KEY')
+
+        # Fields definitions go here
+
+Now just provide the API Key through the ``AIRTABLE_API_KEY`` environment variable, e.g., using `the corresponding Docker command-line option <https://docs.docker.com/engine/reference/commandline/run/#set-environment-variables--e---env---env-file>`_ or `the corresponding Docker Compose configuration key <https://docs.docker.com/compose/environment-variables/#set-environment-variables-in-containers>`_.
+
 Don't Repeat Yourself!
 ----------------------
 
@@ -125,3 +159,13 @@ To avoid unnecessary code repetition, you can create a base superclass for all r
         # Fields definitions go here
 
 Notice that ``table_id`` is specific to the actual record classes, while the ``base_id`` is common for all of them.
+
+Of course this can also be designed to read the API Key from an environment variable::
+
+    class MyBaseRecord(BaseRecord):
+        class Meta:
+            base_id = '<BASE ID>'
+
+        @classmethod
+        def get_api_key(cls):
+            return os.getenv('AIRTABLE_API_KEY')

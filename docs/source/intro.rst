@@ -1,6 +1,9 @@
 Introduction
 ============
 
+.. index::
+   single: Installation
+
 Installation
 ------------
 
@@ -13,6 +16,9 @@ If you want to add support for timezone-aware timestamps (highly recommended):
 .. code-block:: console
 
   $ pip install 'pyrtable[pytz]'
+
+.. index::
+   single: Quick Start
 
 Quick Start
 -----------

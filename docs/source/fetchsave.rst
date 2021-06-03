@@ -11,6 +11,11 @@ From now on, the record class will be referred as :class:`MyTableRecord`.
 
 .. _BaseRecord.all:
 
+.. index::
+   single: all()
+   single: Fetching records; Entire table
+   single: CRUD operations; Retrieving (fetching) all records
+
 Retrieving all records
 ----------------------
 
@@ -42,6 +47,11 @@ If you want to fetch data only once, you need to make a list out of the iterator
     # iterating over it will not fetch data from the server.
 
 .. _BaseRecord.filter:
+
+.. index::
+   single: filter()
+   single: Fetching records; Filtering
+   single: CRUD operations; Retrieving (fetching) some records
 
 Retrieving some records
 -----------------------
@@ -122,12 +132,21 @@ The :class:`Q` operator will also accept ``&&`` (double-ampersand) to combine wi
 
 .. _BaseRecord.get:
 
+.. index::
+   single: get()
+   single: Fetching records; Single record
+   single: CRUD operations; Retrieving (fetching) a single record
+
 Retrieving a single record
 --------------------------
 
 If you have the Airtable record ID, you can use :class:`MyTableRecord.objects.get(id)` to retrieve the corresponding record. However, referencing a record by its ID is not required for common use cases.
 
 .. _BaseRecord.update:
+.. index::
+   single: save()
+   single: Updating records
+   single: CRUD operations; Updating records
 
 Updating records
 ----------------
@@ -160,6 +179,11 @@ Pyrtable is clever enough to avoid sending a server request if no changes were m
 
 .. _BaseRecord.create:
 
+.. index::
+   single: save()
+   single: Updating records
+   single: CRUD operations; Creating records
+
 Creating records
 ----------------
 
@@ -179,6 +203,11 @@ To create a record, you first populate its field values and then call the ``.sav
     new_record.save()
 
 .. _BaseRecord.delete:
+
+.. index::
+   single: delete()
+   single: Deleting records
+   single: CRUD operations; Deleting records
 
 Deleting records
 ----------------

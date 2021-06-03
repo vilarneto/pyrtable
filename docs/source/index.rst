@@ -24,6 +24,9 @@ Pyrtable is a high-level, ORM-like library that hides all these details. It perf
 
 .. _Django: https://www.djangoproject.com
 
+.. index::
+   single: Tutorial
+
 What does it look like?
 -----------------------
 
@@ -125,7 +128,7 @@ Or, if you want a really nice `tqdm <https://tqdm.github.io>`_ progress bar::
                       desc='Updating Airtable records'):
             pass
 
-Pyrtable also has some extra tools to cache data and read authentication keys from external JSON/YAML files -- check out the :class:`APIKeyFromSecretsFileMixin` mixin class. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
+Pyrtable also has some extra tools to :ref:`cache data <Caching records>` and to store authentication keys :ref:`in JSON/YAML files <APIKeyFromSecretsFileMixin>` or :ref:`in an environment variable <API Key in environment var>`. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
 
 Compatibility
 -------------
@@ -151,5 +154,4 @@ Indices and tables
 ==================
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
