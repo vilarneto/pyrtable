@@ -16,10 +16,16 @@ You don't need to map all Airtable fields; it's OK to declare only some of the f
 
 Neither ``id`` nor ``created_timestamp`` can be used as field names as they are reserved for two special fields described below.
 
+.. index::
+   single: id
+
 The ``id`` field
 ----------------
 
 All record classes have an automatically generated ``.id`` field. It will hold either the Airtable record identifier (a string) or, for deleted and created-but-not-saved records, the ``None`` value.
+
+.. index::
+   single: created_timestamp
 
 The ``created_timestamp`` field
 -------------------------------
@@ -31,12 +37,20 @@ Field arguments
 
 Some arguments are used in all field types. These are documented below.
 
+.. index::
+   single: field_name
+   single: Field arguments; field_name
+
 ``field_name``
 ^^^^^^^^^^^^^^
 
 A string. The name of the field as defined in Airtable.
 
 Beware of field names — not all characters are supported by Pyrtable, even if they are accepted in Airtable. Currently only letters (including diacritics), numbers, spaces, dots, hyphens, underlines are accepted.
+
+.. index::
+   single: read_only
+   single: Field arguments; read_only
 
 ``read_only``
 ^^^^^^^^^^^^^
@@ -47,6 +61,9 @@ Field types
 -----------
 
 .. _AttachmentField:
+.. index::
+   single: AttachmentField
+   single: Field types; AttachmentField
 
 ``AttachmentField``
 ^^^^^^^^^^^^^^^^^^^
@@ -97,6 +114,9 @@ This property follows :py:class:`collections.abc.Sized` and :py:class:`collectio
             print('There is a %dx%d image' % (image.width, image.height))
 
 .. _BooleanField:
+.. index::
+   single: BooleanField
+   single: Field types; BooleanField
 
 ``BooleanField``
 ^^^^^^^^^^^^^^^^
@@ -106,6 +126,9 @@ This property follows :py:class:`collections.abc.Sized` and :py:class:`collectio
 Holds a :py:class:`bool` value. This field never holds ``None``, as empty values are mapped to ``False``.
 
 .. _DateField:
+.. index::
+   single: DateField
+   single: Field types; DateField
 
 ``DateField``
 ^^^^^^^^^^^^^
@@ -115,6 +138,9 @@ Holds a :py:class:`bool` value. This field never holds ``None``, as empty values
 Holds a :py:class:`datetime.date` value.
 
 .. _DateTimeField:
+.. index::
+   single: DateTimeField
+   single: Field types; DateTimeField
 
 ``DateTimeField``
 ^^^^^^^^^^^^^^^^^
@@ -124,6 +150,9 @@ Holds a :py:class:`datetime.date` value.
 Holds a :py:class:`datetime.datetime` value. If `the pytz package <https://pypi.org/project/pytz/>`_ is installed, values will be timezone aware.
 
 .. _FloatField:
+.. index::
+   single: FloatField
+   single: Field types; FloatField
 
 ``FloatField``
 ^^^^^^^^^^^^^^
@@ -133,6 +162,9 @@ Holds a :py:class:`datetime.datetime` value. If `the pytz package <https://pypi.
 Holds a :py:class:`float` value.
 
 .. _IntegerField:
+.. index::
+   single: IntegerField
+   single: Field types; IntegerField
 
 ``IntegerField``
 ^^^^^^^^^^^^^^^^
@@ -142,6 +174,9 @@ Holds a :py:class:`float` value.
 Holds an :py:class:`int` value.
 
 .. _MultipleRecordLinkField:
+.. index::
+   single: MultipleRecordLinkField
+   single: Field types; MultipleRecordLinkField
 
 ``MultipleRecordLinkField``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -187,6 +222,9 @@ Pyrtable also creates a companion property with ``'_ids'`` suffix that holds a c
     print('Linked record IDs: %s' % ', '.join(employee.record_ids))
 
 .. _MultipleSelectionField:
+.. index::
+   single: MultipleSelectionField
+   single: Field types; MultipleSelectionField
 
 ``MultipleSelectionField``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -228,6 +266,9 @@ Notice that the last method accepts an iterable, such as lists, tuples, and sets
     record.multiple_selection_field -= value
 
 .. _SingleRecordLinkField:
+.. index::
+   single: SingleRecordField
+   single: Field types; SingleRecordField
 
 ``SingleRecordLinkField``
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -247,6 +288,9 @@ then all objects of ``EmployeeRecord`` class will also have a ``obj.office_id`` 
 Accessing the property at runtime is an expensive operation for the first time, as it requires fetching the record from the Airtable server. Once the record is fetched it is cached in memory, so subsequent access are fast. There are techniques to cache foreign records in advance (@TODO document).
 
 .. _SingleSelectionField:
+.. index::
+   single: SingleSelectionField
+   single: Field types; SingleSelectionField
 
 ``SingleSelectionField``
 ^^^^^^^^^^^^^^^^^^^^^^^^
@@ -264,6 +308,9 @@ Holds a single value from a predefined set (Airtable calls it a “Single select
        role = SingleSelectionField('Role', choices=Role)
 
 .. _StringField:
+.. index::
+   single: StringField
+   single: Field types; StringField
 
 ``StringField``
 ^^^^^^^^^^^^^^^

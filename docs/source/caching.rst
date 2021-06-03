@@ -1,3 +1,7 @@
+.. _Caching records:
+.. index::
+   single: Caching; Caching records
+
 Caching records
 ===============
 
@@ -58,6 +62,10 @@ Caching all tables may be too much depending on your scenario. This default beha
 ``allow_classes``, if specified, is a list of record classes that will always be cached. Any classes not listed will not be cached.
 
 ``exclude_classes``, on the other hand, is a list of record classes that will never be cached. Any classes not listed will be cached.
+
+.. index::
+   single: pre_cache()
+   single: Caching; pre_cache()
 
 The CachingContext.pre_cache() method
 -------------------------------------
