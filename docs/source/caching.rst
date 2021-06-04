@@ -1,13 +1,55 @@
 .. _Caching records:
 .. index::
    single: Caching; Caching records
+   single: SimpleCachingContext
 
 Caching records
 ===============
 
-Pyrtable does not provide any caching mechanism by default. In other words, iterating over a query will always send requests to the server to fetch fresh data.
+By default, Pyrtable does not use any caching mechanism. In other words, any query operation will hit the Airtable server to fetch fresh data. In the example below the server will be queried twice::
 
-This, however, can be extremely slow when referring to linked records, i.e., those contained in :class:`SingleRecordLinkField` and :class:`MultipleRecordLinkField` fields. In these cases, the default strategy is to make a new server request *for each linked record*. If you are working on a table with several linked records this will obviously become a waste of resources, especially if some records are linked many times!
+    class EmployeeRecord(BaseRecord):
+        class Meta:
+            # Meta data
+
+        name = StringField('Name')
+
+    if __name__ == '__main__':
+        # At this point there is no communication with the server --
+        # query is being built but not iterated over:
+        employees_query = EmployeeRecord.objects.all()
+
+        # Now data will be fetched from the server:
+        for employee in employees_query:
+            print(employee.name)
+
+        # Since no caching mechanism is active,
+        # data will be fetched *again* from the server:
+        for employee in employees_query:
+            print(employee.name)
+
+This can be reduced to a single server hit by storing the query results beforehand::
+
+    class EmployeeRecord(BaseRecord):
+        class Meta:
+            # Meta data
+
+        name = StringField('Name')
+
+    if __name__ == '__main__':
+        # Notice that the query results (not the query itself)
+        # is now being stored, so all server communication happens here
+        employees = list(EmployeeRecord.objects.all())
+
+        # This happens without server communication
+        for employee in employees:
+            print(employee.name)
+
+        # This also happens without server communication
+        for employee in employees:
+            print(employee.name)
+
+However, in any case operations can be extremely slow when referring to linked records, i.e., those contained in :class:`SingleRecordLinkField` and :class:`MultipleRecordLinkField` fields. In these cases, the default strategy is to make a new server request *for each linked record*. If you are working on a table with several linked records this will obviously become a waste of resources, especially if some records are linked many times!
 
 To overcome this, Pyrtable offers a caching strategy for linked records. Instead of loading them one by one, you can first fetch all records from the linked table(s), then work normally over the “linking” table. The following example illustrates this strategy::
 
