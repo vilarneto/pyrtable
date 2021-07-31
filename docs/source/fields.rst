@@ -309,6 +309,8 @@ Holds a single value from a predefined set (Airtable calls it a “Single select
    class EmployeeRecord(BaseRecord):
        role = SingleSelectionField('Role', choices=Role)
 
+Alternatively ``choices`` argument accepts a list of tuples to map Python values to Airtable values and vice-versa. In this case the format is ``[(PythonValue1, 'AirtableValue1'), (PythonValue2, 'AirtableValue2'), ...]``. All Python values must be hashable.
+
 .. _StringField:
 .. index::
    single: StringField
