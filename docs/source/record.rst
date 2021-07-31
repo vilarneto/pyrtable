@@ -136,9 +136,9 @@ Now just provide the API Key through the ``AIRTABLE_API_KEY`` environment variab
 Don't Repeat Yourself!
 ----------------------
 
-In general, a Python project will interact with several tables across a single Airtable base. That means that the ``base_id`` value will be the same for all :class:`BaseRecord` subclasses.
+In the most common scenario, a Python project will interact with several tables across a single Airtable base. That means that ``base_id`` value will be the same for all :class:`BaseRecord` subclasses.
 
-To avoid unnecessary code repetition, you can create a base superclass for all record classes of the same base. This superclass will only contain the definition of ``base_id`` and the selected authentication method. See the example::
+To avoid unnecessary code repetition, you can create a superclass for all record classes of the same base. This superclass will only contain the definition of ``base_id`` and the selected authentication method. See the example::
 
     class MyBaseRecord(APIKeyFromSecretsFileMixin, BaseRecord):
         class Meta:
@@ -158,9 +158,9 @@ To avoid unnecessary code repetition, you can create a base superclass for all r
 
         # Fields definitions go here
 
-Notice that ``table_id`` is specific to the actual record classes, while the ``base_id`` is common for all of them.
+Notice that ``table_id`` is specific to the actual record classes, while ``base_id`` is common for all of them.
 
-Of course this can also be designed to read the API Key from an environment variable::
+Of course this superclass can also be designed to read the API Key from an environment variable::
 
     class MyBaseRecord(BaseRecord):
         class Meta:

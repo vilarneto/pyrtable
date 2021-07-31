@@ -103,7 +103,7 @@ This property follows :py:class:`collections.abc.Sized` and :py:class:`collectio
     class PersonRecord(BaseRecord):
         profile_pictures = AttachmentField('Images', read_only=True)
 
-    # ...
+    person = # ...fetch a PersonRecord from the server
 
     # Counting the number of attached images
     print(len(person.profile_pictures))
@@ -190,7 +190,7 @@ This property follows :py:class:`collections.abc.Iterable` and :py:class:`collec
     class EmployeeRecord(BaseRecord):
         projects = MultipleRecordLinkField('Projects', linked_class=ProjectRecord)
 
-    # ...
+    employee = # ...fetch an EmployeeRecord from the server
 
     # Counting the number of linked records
     print(len(employee.projects))
@@ -221,6 +221,8 @@ Pyrtable also creates a companion property with ``'_ids'`` suffix that holds a c
 
     print('Linked record IDs: %s' % ', '.join(employee.record_ids))
 
+Accessing a ``MultipleRecordLinkField`` property at runtime is an expensive operation for the first time, as it requires fetching each set of linked records from the Airtable server. Once the records are fetched they are cached in memory, so subsequent accesses are fast. Pyrtable also provides mechanisms to :ref:`cache foreign records in advance <Caching records>`.
+
 .. _MultipleSelectionField:
 .. index::
    single: MultipleSelectionField
@@ -237,7 +239,7 @@ If ``choices`` is not given or is ``None``, the field maps values into strings.
 
 .. warning::
 
-    Due to limitations of the Airtable API, do not use commas in any of the options for multiple select fields. This may confuse Pyrtable in some operations and may cause data loss!
+    Due to limitations of the Airtable API, it is currently not possible to use commas in any of the options for multiple select fields. This may confuse Pyrtable in some operations and may cause data loss!
 
 This property follows :py:class:`collections.abc.Iterable` and :py:class:`collections.abc.MutableSet` semantics, so the following operations are allowed::
 
@@ -285,7 +287,7 @@ Pyrtable also creates a companion property with ``'_ids'`` suffix that holds a r
 
 then all objects of ``EmployeeRecord`` class will also have a ``obj.office_id`` that holds the ID of the office record. Accessing this property does not hit the Airtable field.
 
-Accessing the property at runtime is an expensive operation for the first time, as it requires fetching the record from the Airtable server. Once the record is fetched it is cached in memory, so subsequent access are fast. There are techniques to cache foreign records in advance (@TODO document).
+Accessing a ``SingleRecordLinkField`` property at runtime is an expensive operation for the first time, as it requires fetching each linked record from the Airtable server. Once the linked record is fetched it is cached in memory, so subsequent accesses are fast. Pyrtable also provides mechanisms to :ref:`cache foreign records in advance <Caching records>`.
 
 .. _SingleSelectionField:
 .. index::

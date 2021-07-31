@@ -17,8 +17,9 @@ class _AbstractSelectionField(BaseField, ABC):
 
     def __init__(self, column_name: str, choices: Optional[Union[Type[Enum], List[Tuple[Any, Any]]]] = None, **kwargs):
         if choices is not None:
-            if issubclass(choices, Enum):
-                # @TODO What about other possibilities?
+            import inspect
+
+            if inspect.isclass(choices) and issubclass(choices, Enum):
                 self._enum_class = choices
 
                 choices = list((value, value.value) for value in choices)
