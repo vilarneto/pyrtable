@@ -54,13 +54,14 @@ class MultipleSelectionField(_AbstractSelectionField):
         return ValueSet(value)
 
     def decode_from_airtable(self, value: Optional[List[str]], base_and_table: '_BaseAndTableProtocol') -> ValueSet:
+        if value is not None:
+            value = [self._raw_to_value.get(item, item) for item in value]
         return self.validate(value, base_and_table=base_and_table)
 
     def encode_to_airtable(self, value: Optional[ValueSet]) -> Optional[List[str]]:
         if not value:
             return None
-        return [item.value if isinstance(item, Enum) else item
-                for item in value]
+        return [self._value_to_raw.get(item, item) for item in value]
 
     def validate(self, value: Optional[Iterable[Any]], base_and_table: '_BaseAndTableProtocol') -> ValueSet:
         value_set = self._create_value_set()
