@@ -30,7 +30,7 @@ class EmployeeRecord(BaseRecord):
 
     @classmethod
     def get_api_key(cls):
-        # The API key can be generated in you Airtable Account page. 
+        # The API key can be generated in you Airtable Account page.
         # DO NOT COMMIT THIS STRING!
         return 'keyABCDE12345'
 
@@ -73,7 +73,7 @@ Notice that we don't deal with Airtable column or table names once record classe
 ## Beyond the basics
 
 Keep in mind that Airtable is *not* a database system and is not really designed for tasks that need changing tons of data. In fact, only fetch (list) operations are batched – insert/update/delete operations are limited to a single record per request, and Airtable imposes a 5 requests per second limit even for paid accounts. You will need a full minute to update 300 records!
- 
+
 That said, Pyrtable will respect that limit. In fact, it will track dirty fields to avoid unnecessary server requests and will render `.save()` calls as no-ops for unchanged objects. That also works with multiple threads, so the following pattern can be used to update and/or create several records:
 
 ```python
@@ -105,7 +105,7 @@ Pyrtable also has some extra tools to cache data and to store authentication key
 
 ## Compatibility
 
-Pyrtable is compatible with Python 3.8 and 3.9. Python 2.x is not supported at all. 
+Pyrtable is compatible with Python 3.8 and above. Python 2.x is not supported at all.
 
 ## Documentation
 

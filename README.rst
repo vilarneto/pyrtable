@@ -110,7 +110,7 @@ Pyrtable also has some extra tools to cache data and to store authentication key
 Compatibility
 -------------
 
-Pyrtable is compatible with Python 3.8 and 3.9. Python 2.x is not supported at all.
+Pyrtable is compatible with Python 3.8 and above. Python 2.x is not supported at all.
 
 Documentation
 -------------
