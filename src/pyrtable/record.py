@@ -1,10 +1,9 @@
 import datetime
-import os
 import re
 from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, Union, List, Callable, Tuple, Protocol
 
-from ._baseandtable import _BaseAndTableSettableProtocol, _BaseAndTableSettableMixin
-from .query import RecordQuery, _QueryableProtocol
+from ._baseandtable import _BaseAndTableSettableMixin
+from .query import RecordQuery
 
 
 try:
@@ -55,51 +54,10 @@ class _MetaManager:
         return self
 
 
-class _ObjectsManager(_QueryableProtocol, _BaseAndTableSettableProtocol):
-    @property
-    def base_id(self) -> Optional[str]:
-        return self._record_class.get_class_base_id()
-
-    @property
-    def table_id(self) -> Optional[str]:
-        return self._record_class.get_class_table_id()
-
-    def __init__(self, record_class: Type['BaseRecord']):
-        super().__init__()
-        self._record_class = record_class
-
-    def all(self) -> RecordQuery:
-        # noinspection PyProtectedMember
-        record_query_cls: Type[RecordQuery] = self._record_class._get_meta_attr('record_query_class', RecordQuery)
-        record_query = record_query_cls(record_class=self._record_class)
-        return record_query
-
-    def filter(self, *args, **kwargs) -> RecordQuery:
-        return self.all().filter(*args, **kwargs)
-
-    def get(self, record_id: str) -> 'BaseRecord':
-        return self.all().get(record_id=record_id)
-
-    def set_base_id(self, base_id: str) -> RecordQuery:
-        return self.all().set_base_id(base_id)
-
-    def set_table_id(self, table_id: str) -> RecordQuery:
-        return self.all().set_table_id(table_id)
-
-
-class _ObjectsManagerWrapper:
-    _managers = {}
-
-    def __get__(self, instance: 'BaseRecord', owner: Type['BaseRecord']):
-        # @TODO This mechanism opens up to race conditions
-        if owner not in _ObjectsManagerWrapper._managers:
-            _ObjectsManagerWrapper._managers[owner] = _ObjectsManager(owner)
-
-        return _ObjectsManagerWrapper._managers[owner]
-
-
 class _BaseRecordProtocol(Protocol):
-    """Protocol for type hinting"""
+    """
+    Protocol for :class:`BaseRecord` type hinting.
+    """
     class Meta:
         api_key: str
         base_id: str
@@ -113,6 +71,9 @@ class _BaseRecordProtocol(Protocol):
 
 
 class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
+    """
+    Base class for all table records.
+    """
     _ATTRIBUTE_NOT_SPECIFIED = object()
 
     _id: Optional[str] = None
@@ -121,7 +82,7 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
     _created_timestamp: Optional[datetime.datetime] = None
 
     meta = _MetaManager()
-    objects: RecordQuery = _ObjectsManagerWrapper()
+    objects: RecordQuery
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__()
@@ -129,6 +90,10 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
         for attr_name, field in cls.iter_fields():
             # noinspection PyProtectedMember
             field._install_extra_properties(cls, attr_name)
+
+        record_query_cls = cls._get_meta_attr('record_query_class', RecordQuery)
+        record_query = record_query_cls(record_class=cls)
+        cls.objects = record_query
 
     @classmethod
     def iter_fields(cls) -> Iterator[Tuple[str, BaseField]]:

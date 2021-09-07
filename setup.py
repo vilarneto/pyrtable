@@ -31,7 +31,7 @@ setup(
     author='Vilar da Camara Neto',
     author_email='vilarneto@gmail.com',
     license='MIT',
-    classifiers=['Development Status :: 4 - Beta', 'Environment :: Console', 'Intended Audience :: Developers', 'License :: OSI Approved :: MIT License', 'Natural Language :: English', 'Operating System :: OS Independent', 'Programming Language :: Python', 'Programming Language :: Python :: 3.8', 'Programming Language :: Python :: 3.9', 'Programming Language :: Python :: Implementation :: CPython', 'Topic :: Software Development'],
+    classifiers=['Development Status :: 4 - Beta', 'Environment :: Console', 'Intended Audience :: Developers', 'License :: OSI Approved :: MIT License', 'Natural Language :: English', 'Operating System :: OS Independent', 'Programming Language :: Python', 'Programming Language :: Python :: 3.8', 'Programming Language :: Python :: 3.9', 'Programming Language :: Python :: 3.10', 'Programming Language :: Python :: Implementation :: CPython', 'Topic :: Software Development'],
     packages=['pyrtable', 'pyrtable.context', 'pyrtable.fields', 'pyrtable.filters'],
     package_dir={"": "src"},
     package_data={},
