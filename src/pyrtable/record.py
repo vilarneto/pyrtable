@@ -91,6 +91,7 @@ class _ObjectsManagerWrapper:
     _managers = {}
 
     def __get__(self, instance: 'BaseRecord', owner: Type['BaseRecord']):
+        # @TODO This mechanism opens up to race conditions
         if owner not in _ObjectsManagerWrapper._managers:
             _ObjectsManagerWrapper._managers[owner] = _ObjectsManager(owner)
 
@@ -120,7 +121,7 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
     _created_timestamp: Optional[datetime.datetime] = None
 
     meta = _MetaManager()
-    objects = _ObjectsManagerWrapper()
+    objects: RecordQuery = _ObjectsManagerWrapper()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__()
