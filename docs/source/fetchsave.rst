@@ -220,4 +220,3 @@ A record can be deleted from the server by calling its ``.delete()`` method::
 
     # Delete this record
     record.delete()
-
