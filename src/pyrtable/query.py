@@ -13,8 +13,8 @@ RT = TypeVar('RT', bound='BaseRecord')
 QT = TypeVar('QT', bound='RecordQuery')
 
 
-class RecordQuery(Generic[RT, QT], Iterable[RT],
-                  collections.abc.Iterable, _BaseAndTableSettableProtocol, BaseAndTable):
+class RecordQuery(BaseAndTable, Generic[RT, QT], Iterable[RT],
+                  collections.abc.Iterable, _BaseAndTableSettableProtocol):
     """
     A (potentially under construction) query for records in a table. Also represents the starting point for queries
     to be made over a :class:`BaseRecord` derived class, exposed through the `objects` class attribute.
