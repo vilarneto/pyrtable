@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import collections
+import collections.abc
 from enum import Enum
 from typing import TypeVar, MutableSet, Iterator, Callable, Optional, Union, Any, Type, Generic, Iterable
 
@@ -9,17 +9,20 @@ T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)
 
 
-class ValueSet(collections.MutableSet, collections.Iterable, Generic[T]):
+class ValueSet(collections.abc.MutableSet, collections.abc.Iterable, Generic[T]):
     _items: MutableSet[T]
+    _validator: Callable[[T], T]
 
-    def __init__(self, other: ValueSet = None, validator: Optional[Callable[[Any], T]] = None):
+    def __init__(self, other: Optional[ValueSet] = None, *, validator: Optional[Callable[[Any], T]] = None):
         if other is not None:
             self._items = set(other._items)
             self._validator = other._validator
         else:
             self._items = set()
 
-        self._validator = validator
+        if validator is not None:
+            self._validator = validator
+
         if self._validator is None:
             def validator(value: T) -> T:
                 return value
