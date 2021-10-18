@@ -11,7 +11,7 @@ T_co = TypeVar('T_co', covariant=True)
 
 class ValueSet(collections.abc.MutableSet, collections.abc.Iterable, Generic[T]):
     _items: MutableSet[T]
-    _validator: Callable[[T], T]
+    _validator: Callable[[T], T] = None
 
     def __init__(self, other: Optional[ValueSet] = None, *, validator: Optional[Callable[[Any], T]] = None):
         if other is not None:
