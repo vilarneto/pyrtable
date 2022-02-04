@@ -24,7 +24,7 @@ if os.path.exists(readme_path):
 setup(
     long_description=readme,
     name='pyrtable',
-    version='0.8.3',
+    version='0.8.4',
     description='Django-inspired library to interface with Airtable',
     python_requires='==3.*,>=3.8.0',
     project_urls={"documentation": "https://pyrtable.readthedocs.io/", "repository": "https://github.com/vilarneto/pyrtable"},
