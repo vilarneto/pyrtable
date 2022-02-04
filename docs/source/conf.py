@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath(os.path.join('..', 'src')))
 # -- Project information -----------------------------------------------------
 
 project = 'Pyrtable'
-copyright = '2020,2021 by Vilar Fiuza da Camara Neto'
+copyright = '2020,2021,2022 by Vilar Fiuza da Camara Neto'
 author = 'Vilar Fiuza da Camara Neto'
 
 # The full version, including alpha/beta/rc tags

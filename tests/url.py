@@ -110,7 +110,7 @@ class URLTests(unittest.TestCase):
                          'https://api.airtable.com/v0/appSomeValue/Something')
 
     def test_linked_urls(self):
-        # To avoid server hits / API key fetching we'll “fake” cached records
+        # To avoid server hits / API Key fetching we'll “fake” cached records
 
         from pyrtable.context import set_default_context, SimpleCachingContext
 
@@ -161,7 +161,7 @@ class URLTests(unittest.TestCase):
                 'Test Field': ['rec1'],
             },
         })
-        # Break because it needs the API key (since it's not cached -- 'rec1' refers to another base)
+        # Break because it needs the API Key (since it's not cached -- 'rec1' refers to another base)
         self.assertRaises(KeyError, lambda: record.single_link)
 
         record = AnotherTestRecord(_base_id=AnotherTestRecord.Meta.base_id, _table_id=AnotherTestRecord.Meta.table_id)
@@ -172,7 +172,7 @@ class URLTests(unittest.TestCase):
                 'Test Field': ['rec2'],
             },
         })
-        # Break because it needs the API key (since it's not cached)
+        # Break because it needs the API Key (since it's not cached)
         self.assertRaises(KeyError, lambda: record.single_link)
 
         record = AnotherTestRecord(_base_id='appChanged', _table_id=AnotherTestRecord.Meta.table_id)

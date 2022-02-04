@@ -34,7 +34,7 @@ Ok, let's have a taste of how one can define a class that maps onto records of a
 
        @classmethod
        def get_api_key(cls):
-           # The API key can be generated in you Airtable Account page.
+           # The API Key can be generated in you Airtable Account page.
            # DO NOT COMMIT THIS STRING!
            return 'keyABCDE12345'
 
@@ -105,7 +105,7 @@ Or, if you want a really nice `tqdm <https://tqdm.github.io>`_ progress bar:
                      desc='Updating Airtable records'):
            pass
 
-Pyrtable also has some extra tools to cache data and to store authentication keys in JSON/YAML files or in an environment variable. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
+Pyrtable also has some extra tools to cache data and to store authentication keys in JSON/YAML files or in an environment variable. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API Key!
 
 Compatibility
 -------------
@@ -127,4 +127,4 @@ License
 
 Pyrtable is released under `MIT license <https://opensource.org/licenses/MIT>`_.
 
-Copyright (c) 2020,2021 by Vilar Fiuza da Camara Neto
+Copyright (c) 2020,2021,2022 by Vilar Fiuza da Camara Neto

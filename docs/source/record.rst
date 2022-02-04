@@ -82,7 +82,7 @@ If this class method accepts a `base_id` parameter, then the caller will fill it
 
 .. warning::
 
-    Putting the raw API Key in the source code itself is a *bad security practice*, as anyone with access to your code will have **full R/W access to all your Airtable bases**. API Keys are as sensitive as passwords; they should be securely stored in separate, private files or using OS keychain services. See the :class:`APIKeyFromSecretsFileMixin` below.
+    Putting the raw API Key in the source code itself is a *bad security practice*, as anyone with access to your code will have **full R/W access to all your Airtable bases**. API Keys are as sensitive as passwords; they should be securely stored in separate, private files or using OS keychain services. See the :class:`APIKeyFromSecretsFileMixin` and :class:`APIKeyFromEnvMixin` mixin classes below.
 
 .. _APIKeyFromSecretsFileMixin:
 
@@ -115,19 +115,17 @@ This file is a `YAML file <https://en.wikipedia.org/wiki/YAML>`_ with one of mor
 .. index::
    single: Docker; Providing the API Key
 
+.. _APIKeyFromEnvMixin:
+
 Reading the API Key from an environment variable
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-This is an alternative to using ``APIKeyFromSecretsFileMixin`` and particularly useful for running Docker containers where all bases are accessible under the same API Key::
+This is a mixin class that retrieves the API Key from the ``AIRTABLE_API_KEY`` environment variable. It is particularly useful for running Docker containers where all bases are accessible under the same API Key::
 
-    class MyTableRecord(BaseRecord):
+    class MyTableRecord(APIKeyFromEnvMixin, BaseRecord):
         class Meta:
             base_id = '<BASE ID>'
             table_id = '<TABLE ID>'
-
-        @classmethod
-        def get_api_key(cls):
-            return os.getenv('AIRTABLE_API_KEY')
 
         # Fields definitions go here
 

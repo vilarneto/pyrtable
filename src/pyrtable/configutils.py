@@ -33,7 +33,10 @@ def get_config_dirs() -> List[str]:
 
 
 def find_config_file(filename: str) -> str:
-    for candidate_dir in get_config_dirs():
+    filename_dir = os.path.split(filename)[0]
+    config_dirs = [filename_dir] if filename_dir else get_config_dirs()
+
+    for candidate_dir in config_dirs:
         if not os.path.isdir(candidate_dir):
             continue
         path = os.path.join(candidate_dir, filename)

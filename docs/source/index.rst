@@ -51,7 +51,7 @@ Ok, let's have a taste of how one can define a class that maps into records of a
 
         @classmethod
         def get_api_key(cls):
-            # The API key can be generated in you Airtable Account page.
+            # The API Key can be generated in you Airtable Account page.
             # DO NOT COMMIT THIS STRING!
             return 'keyABCDE12345'
 
@@ -128,12 +128,12 @@ Or, if you want a really nice `tqdm <https://tqdm.github.io>`_ progress bar::
                       desc='Updating Airtable records'):
             pass
 
-Pyrtable also has some extra tools to :ref:`cache data <Caching records>` and to store authentication keys :ref:`in JSON/YAML files <APIKeyFromSecretsFileMixin>` or :ref:`in an environment variable <API Key in environment var>`. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
+Pyrtable also has some extra tools to :ref:`cache data <Caching records>` and to store authentication keys :ref:`in JSON/YAML files <APIKeyFromSecretsFileMixin>` or :ref:`in an environment variable <APIKeyFromEnvMixin>`. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API Key!
 
 Compatibility
 -------------
 
-Pyrtable is compatible with Python 3.8 and 3.9. Python 2.x is not supported at all.
+Pyrtable is compatible with Python 3.8 and above. Python 2.x is not supported at all.
 
 Questions, bug reports, improvements
 ------------------------------------
@@ -147,7 +147,7 @@ Pyrtable is released under `MIT license`_.
 
 .. _MIT license: https://opensource.org/licenses/MIT
 
-Copyright (c) 2020,2021 by Vilar Fiuza da Camara Neto
+Copyright (c) 2020,2021,2022 by Vilar Fiuza da Camara Neto
 
 
 Indices and tables
