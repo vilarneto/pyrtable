@@ -127,4 +127,4 @@ License
 
 Pyrtable is released under `MIT license <https://opensource.org/licenses/MIT>`_.
 
-Copyright (c) 2020,2021 by Vilar Fiuza da Camara Neto
+Copyright (c) 2020,2021,2022 by Vilar Fiuza da Camara Neto
