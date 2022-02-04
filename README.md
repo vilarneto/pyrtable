@@ -30,7 +30,7 @@ class EmployeeRecord(BaseRecord):
 
     @classmethod
     def get_api_key(cls):
-        # The API key can be generated in you Airtable Account page.
+        # The API Key can be generated in you Airtable Account page.
         # DO NOT COMMIT THIS STRING!
         return 'keyABCDE12345'
 
@@ -101,7 +101,7 @@ with ThreadPoolExecutor(max_workers=10) as executor:
         pass
 ```
 
-Pyrtable also has some extra tools to cache data and to store authentication keys in JSON/YAML files or in an environment variable. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API key!
+Pyrtable also has some extra tools to cache data and to store authentication keys in JSON/YAML files or in an environment variable. Remember to never commit sensitive data to your repository, as Airtable authentication allows **full R/W access to all your bases** with a single API Key!
 
 ## Compatibility
 

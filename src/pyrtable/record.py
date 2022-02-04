@@ -250,13 +250,13 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
         raise AttributeError("'Meta.%s' attribute is not defined for class %r" % (attr_name, cls.__name__))
 
     @classmethod
-    def _get_api_key(cls, base_id: Optional[str] = None) -> Optional[str]:
-        if hasattr(cls, 'get_api_key'):
-            function = cls.get_api_key
+    def _get_api_key(cls, base_id: str) -> str:
+        import functools
+        import inspect
 
-            if base_id is not None:
-                import functools
-                import inspect
+        for base_cls in inspect.getmro(cls):
+            if hasattr(base_cls, 'get_api_key'):
+                function = base_cls.get_api_key
 
                 signature = inspect.signature(function)
                 # Can base_id be sent as a keyword argument?
@@ -265,11 +265,18 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
                                for parameter in signature.parameters.values()):
                     function = functools.partial(function, base_id=base_id)
 
-            result = function()
-        else:
-            result = cls._get_meta_attr('api_key', default_value=None)
+                result = function()
+                if result is not None:
+                    return result
 
-        return result
+        api_key = cls._get_meta_attr('api_key', default_value=None)
+        if api_key is None:
+            if base_id is None:
+                raise ValueError('Cannot find a default Airtable API Key')
+            else:
+                raise ValueError('Cannot find an Airtable API Key for base_id=%s' % base_id)
+
+        return api_key
 
     @classmethod
     def get_class_base_id(cls) -> str:
@@ -280,28 +287,38 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
         return cls._get_meta_attr('table_id', None)
 
 
+class APIKeyFromEnvMixin:
+    """
+    Mixin to return the Airtable API Key from the AIRTABLE_API_KEY environment variable.
+    """
+
+    @classmethod
+    def get_api_key(cls) -> Optional[str]:
+        import os
+        return os.getenv('AIRTABLE_API_KEY') or None
+
+
 class APIKeyFromSecretsFileMixin:
+    """
+    Mixin to return the Airtable API Key from a secrets file.
+
+    This secrets file is a YAML file containing a top-level dictionary whose keys are the base IDs and values are
+    corresponding API keys.
+    """
+
     AIRTABLE_SECRETS_FILENAME = 'airtable_secrets.yaml'
 
     @classmethod
-    def get_api_key(cls, base_id=None):
-        if not issubclass(cls, BaseRecord):
-            raise AttributeError('This is a mixin for BaseRecord subclasses')
-
+    def get_api_key(cls, base_id: str):
         from pyrtable.configutils import load_config_file
+        import os
 
-        cls: Union[BaseRecord, APIKeyFromSecretsFileMixin]
+        airtable_secrets_filename = os.getenv('AIRTABLE_SECRETS_FILENAME')
+        if not airtable_secrets_filename:
+            airtable_secrets_filename = cls.AIRTABLE_SECRETS_FILENAME
 
-        if base_id is None:
-            base_id = cls.get_class_base_id()
-        if base_id is None:
-            raise ValueError('Base ID is not set')
-
-        all_api_keys = load_config_file(cls.AIRTABLE_SECRETS_FILENAME)
-        api_key = all_api_keys.get(base_id)
-        if api_key is None:
-            raise KeyError('API key not found in file %r: %r' % (cls.AIRTABLE_SECRETS_FILENAME, api_key))
-        return api_key
+        all_api_keys = load_config_file(airtable_secrets_filename)
+        return all_api_keys.get(base_id)
 
 
 class TableIDFromClassNameMixin:
@@ -324,4 +341,4 @@ class TableIDFromClassNameMixin:
         return table_id
 
 
-__all__ = ['BaseRecord', 'APIKeyFromSecretsFileMixin', 'TableIDFromClassNameMixin']
+__all__ = ['BaseRecord', 'APIKeyFromEnvMixin', 'APIKeyFromSecretsFileMixin', 'TableIDFromClassNameMixin']
