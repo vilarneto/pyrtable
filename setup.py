@@ -35,5 +35,5 @@ setup(
     packages=['pyrtable', 'pyrtable.context', 'pyrtable.fields', 'pyrtable.filters'],
     package_dir={"": "src"},
     package_data={},
-    install_requires=['deprecated', 'pytz', 'pyyaml==5.*,>=5.1.0', 'requests==2.*,>=2.22.0', 'simplejson==3.*,>=3.16.0'],
+    install_requires=['deprecated', 'pytz', 'pyyaml<7,>=5.1', 'requests==2.*,>=2.22.0', 'simplejson==3.*,>=3.16.0'],
 )
