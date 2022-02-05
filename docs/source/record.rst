@@ -160,10 +160,6 @@ Notice that ``table_id`` is specific to the actual record classes, while ``base_
 
 Of course this superclass can also be designed to read the API Key from an environment variable::
 
-    class MyBaseRecord(BaseRecord):
+    class MyBaseRecord(APIKeyFromEnvMixin, BaseRecord):
         class Meta:
             base_id = '<BASE ID>'
-
-        @classmethod
-        def get_api_key(cls):
-            return os.getenv('AIRTABLE_API_KEY')
