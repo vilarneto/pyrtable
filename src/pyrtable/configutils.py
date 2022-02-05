@@ -3,33 +3,36 @@ import threading
 from typing import List, Optional
 
 
-_config_dirs: Optional[List[str]] = None
-_config_dirs_lock = threading.Lock()
+config_dirs: Optional[List[str]] = None
+config_dirs_lock = threading.Lock()
 
 
 def get_config_dirs() -> List[str]:
-    global _config_dirs
+    global config_dirs
 
     import os
 
-    with _config_dirs_lock:
-        if _config_dirs is None:
-            _config_dirs = os.environ.get('PYRTABLE_CONFIG_DIRS')
-            if _config_dirs is not None:
-                _config_dirs = _config_dirs.split(':')
+    if config_dirs is None:
+        with config_dirs_lock:
+            if config_dirs is None:
+                new_config_dirs = os.environ.get('PYRTABLE_CONFIG_DIRS')
+                if new_config_dirs is not None:
+                    new_config_dirs = new_config_dirs.split(':')
 
-        if _config_dirs is None:
-            home_dir = os.path.expanduser('~')
-            _config_dirs = [
-                os.path.join(os.getcwd(), 'config'),
-                os.path.join(home_dir, '.config', 'airtable'),
-                '/etc/airtable']
+                if new_config_dirs is None:
+                    home_dir = os.path.expanduser('~')
+                    new_config_dirs = [
+                        os.path.join(os.getcwd(), 'config'),
+                        os.path.join(home_dir, '.config', 'airtable'),
+                        '/etc/airtable']
 
-    general_config_dir = os.environ.get('CONFIG_DIR')
-    if general_config_dir is not None:
-        _config_dirs.insert(0, general_config_dir)
+                general_config_dir = os.environ.get('CONFIG_DIR')
+                if general_config_dir is not None:
+                    new_config_dirs.insert(0, general_config_dir)
 
-    return _config_dirs
+                config_dirs = new_config_dirs
+
+    return config_dirs
 
 
 def find_config_file(filename: str) -> str:
