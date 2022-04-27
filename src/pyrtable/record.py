@@ -1,8 +1,8 @@
 import datetime
 import re
-from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, Union, List, Callable, Tuple, Protocol
+from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, List, Callable, Tuple, Protocol
 
-from ._baseandtable import _BaseAndTableSettableMixin
+from ._baseandtable import _MutableBaseAndTableMixin
 from .query import RecordQuery
 
 
@@ -62,15 +62,13 @@ class _BaseRecordProtocol(Protocol):
         api_key: str
         base_id: str
         table_id: str
-        record_query_class: Type['RecordQuery']
 
         get_api_key: Callable[[], str]
         get_base_id: Callable[[], str]
         get_table_id: Callable[[], str]
-        get_record_query_class: Callable[[], Type['RecordQuery']]
 
 
-class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
+class BaseRecord(_MutableBaseAndTableMixin, _BaseRecordProtocol):
     """
     Base class for all table records.
     """
@@ -82,7 +80,7 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
     _created_timestamp: Optional[datetime.datetime] = None
 
     meta = _MetaManager()
-    objects: RecordQuery
+    objects = RecordQuery()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__()
@@ -91,9 +89,25 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
             # noinspection PyProtectedMember
             field._install_extra_properties(cls, attr_name)
 
+        for _, record_query in cls._iter_record_query_attrs():
+            record_query._record_class = cls
+
+        # Check deprecated mechanism
         record_query_cls = cls._get_meta_attr('record_query_class', RecordQuery)
-        record_query = record_query_cls(record_class=cls)
-        cls.objects = record_query
+        if record_query_cls is not None:
+            import logging
+            logger = logging.getLogger('pyrtable')
+            logger.warning('record_query_class meta attributes are deprecated and will be ignored.')
+
+    @classmethod
+    def _iter_record_query_attrs(cls) -> Iterator[Tuple[str, RecordQuery]]:
+        yielded_attrs = set()
+
+        for current_cls in cls.__mro__:
+            for attr_name, attr in list(current_cls.__dict__.items()):
+                if isinstance(attr, RecordQuery) and attr not in yielded_attrs:
+                    yielded_attrs.add(attr)
+                    yield attr_name, attr
 
     @classmethod
     def iter_fields(cls) -> Iterator[Tuple[str, BaseField]]:

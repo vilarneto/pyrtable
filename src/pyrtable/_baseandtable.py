@@ -45,22 +45,22 @@ class _BaseAndTableProtocol(Protocol, metaclass=abc.ABCMeta):
             raise ValueError('Table ID is not set')
 
 
-class _BaseAndTableSettableProtocol(_BaseAndTableProtocol, metaclass=abc.ABCMeta):
+class _MutableBaseAndTableProtocol(_BaseAndTableProtocol, metaclass=abc.ABCMeta):
     @abc.abstractmethod
-    def set_base_id(self, base_id: str) -> '_BaseAndTableSettableMixin':
+    def set_base_id(self, base_id: str) -> '_MutableBaseAndTableMixin':
         ...
 
     @abc.abstractmethod
-    def set_table_id(self, table_id: str) -> '_BaseAndTableSettableMixin':
+    def set_table_id(self, table_id: str) -> '_MutableBaseAndTableMixin':
         ...
 
 
-class _BaseAndTableSettableMixin(_BaseAndTableSettableProtocol):
-    def set_base_id(self, base_id: str) -> '_BaseAndTableSettableMixin':
+class _MutableBaseAndTableMixin(_MutableBaseAndTableProtocol):
+    def set_base_id(self, base_id: str) -> '_MutableBaseAndTableMixin':
         self._base_id = base_id
         return self
 
-    def set_table_id(self, table_id: str) -> '_BaseAndTableSettableMixin':
+    def set_table_id(self, table_id: str) -> '_MutableBaseAndTableMixin':
         self._table_id = table_id
         return self
 
@@ -110,4 +110,4 @@ class BaseAndTable(_BaseAndTableProtocol):
         return '%s(base_id=%r, table_id=%r)' % (self.__class__.__name__, self._base_id, self._table_id)
 
 
-__all__ = ['_BaseAndTableProtocol', '_BaseAndTableSettableProtocol', '_BaseAndTableSettableMixin', 'BaseAndTable']
+__all__ = ['_BaseAndTableProtocol', '_MutableBaseAndTableProtocol', '_MutableBaseAndTableMixin', 'BaseAndTable']

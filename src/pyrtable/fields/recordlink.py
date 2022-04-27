@@ -56,7 +56,9 @@ class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
         from pyrtable._baseandtable import BaseAndTable
 
         linked_class = self.get_linked_class()
+        # noinspection PyProtectedMember
         base_id = linked_class._get_meta_attr('base_id', None)
+        # noinspection PyProtectedMember
         table_id = linked_class._get_meta_attr('table_id', None)
         return BaseAndTable(base_id, table_id)
 
