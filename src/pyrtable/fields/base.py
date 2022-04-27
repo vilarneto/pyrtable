@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Any, Callable, Type
-
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
 if TYPE_CHECKING:
     from pyrtable._baseandtable import _BaseAndTableProtocol

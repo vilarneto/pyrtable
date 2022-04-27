@@ -1,9 +1,8 @@
 import re
-from typing import TYPE_CHECKING, Type, Dict, Tuple
+from typing import TYPE_CHECKING, Dict, Tuple, Type
 
 from .base import BaseFilter
 from .raw import *
-
 
 if TYPE_CHECKING:
     from pyrtable.record import BaseRecord

@@ -2,11 +2,10 @@ from __future__ import annotations
 
 from abc import ABC
 from enum import Enum
-from typing import TYPE_CHECKING, List, Tuple, Any, Union, Type, Optional, Iterable
+from typing import TYPE_CHECKING, Any, Iterable, List, Optional, Tuple, Type, Union
 
 from .base import BaseField
 from .valueset import ValueSet, validator_from_enum
-
 
 if TYPE_CHECKING:
     from pyrtable._baseandtable import _BaseAndTableProtocol

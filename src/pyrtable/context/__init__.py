@@ -2,7 +2,6 @@ from typing import Optional
 
 from .base import *
 
-
 _default_context: Optional[BaseContext] = None
 
 

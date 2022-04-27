@@ -1,8 +1,7 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Dict, Optional, List
+from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from .base import BaseField
-
 
 if TYPE_CHECKING:
     from pyrtable._baseandtable import _BaseAndTableProtocol

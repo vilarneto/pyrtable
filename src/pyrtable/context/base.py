@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING, Type, Iterator, Optional, Union, Dict, Iterable
-from ..exceptions import RequestError
+from typing import TYPE_CHECKING, Dict, Iterable, Iterator, Optional, Type, Union
 
+from ..exceptions import RequestError
 
 try:
     import simplejson as json
@@ -23,6 +23,7 @@ class BaseContext:
                      base_and_table: '_BaseAndTableProtocol') \
             -> 'BaseRecord':
         import requests
+
         from pyrtable.connectionmanager import get_connection_manager
 
         headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
@@ -52,7 +53,9 @@ class BaseContext:
                    record_filter: Optional['BaseFilter'] = None) \
             -> Iterator['BaseRecord']:
         import urllib.parse
+
         import requests
+
         from pyrtable.connectionmanager import get_connection_manager
 
         headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
@@ -101,6 +104,7 @@ class BaseContext:
                 record_cls: Type['BaseRecord'],
                 record: 'BaseRecord') -> None:
         import requests
+
         from pyrtable.connectionmanager import get_connection_manager
 
         url = record.build_url()
@@ -124,6 +128,7 @@ class BaseContext:
                 record_cls: Type['BaseRecord'],
                 record: 'BaseRecord') -> None:
         import requests
+
         from pyrtable.connectionmanager import get_connection_manager
 
         dirty_fields = record.encode_to_airtable()
@@ -164,6 +169,7 @@ class BaseContext:
                   record_id: str,
                   base_and_table: '_BaseAndTableProtocol') -> None:
         import requests
+
         from pyrtable.connectionmanager import get_connection_manager
 
         url = base_and_table.build_url(record_id=record_id)
@@ -223,6 +229,7 @@ class SimpleCachingContext(BaseContext):
 
     def pre_cache(self, *args: Union['BaseRecord', 'RecordQuery', Type['BaseRecord']]):
         import inspect
+
         from pyrtable.query import RecordQuery
         from pyrtable.record import BaseRecord
 

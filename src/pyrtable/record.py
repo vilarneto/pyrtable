@@ -1,10 +1,9 @@
 import datetime
 import re
-from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, List, Callable, Tuple, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Protocol, Tuple, Type
 
 from ._baseandtable import _MutableBaseAndTableMixin
 from .query import RecordQuery
-
 
 try:
     import simplejson as json
@@ -17,7 +16,6 @@ except ImportError:
     pytz = None
 
 from pyrtable.fields import BaseField
-
 
 if TYPE_CHECKING:
     pass
@@ -324,8 +322,9 @@ class APIKeyFromSecretsFileMixin:
 
     @classmethod
     def get_api_key(cls, base_id: str):
-        from pyrtable.configutils import load_config_file
         import os
+
+        from pyrtable.configutils import load_config_file
 
         airtable_secrets_filename = os.getenv('AIRTABLE_SECRETS_FILENAME')
         if not airtable_secrets_filename:

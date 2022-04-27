@@ -1,7 +1,6 @@
 import datetime
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
-
 if TYPE_CHECKING:
     from pyrtable._baseandtable import _BaseAndTableProtocol
 

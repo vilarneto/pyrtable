@@ -1,8 +1,7 @@
 import collections.abc
-from typing import TYPE_CHECKING, Generic, Iterable, Iterator, TypeVar, Type, Optional
+from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type, TypeVar
 
 from ._baseandtable import _MutableBaseAndTableProtocol
-
 
 if TYPE_CHECKING:
     from .filters.base import BaseFilter

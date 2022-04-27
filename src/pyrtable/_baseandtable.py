@@ -1,6 +1,5 @@
 import abc
-from typing import TYPE_CHECKING, Optional, Type, Protocol
-
+from typing import TYPE_CHECKING, Optional, Protocol, Type
 
 if TYPE_CHECKING:
     from .record import BaseRecord

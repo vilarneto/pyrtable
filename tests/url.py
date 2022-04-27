@@ -112,7 +112,7 @@ class URLTests(unittest.TestCase):
     def test_linked_urls(self):
         # To avoid server hits / API Key fetching we'll “fake” cached records
 
-        from pyrtable.context import set_default_context, SimpleCachingContext
+        from pyrtable.context import SimpleCachingContext, set_default_context
 
         # Set up the caching mechanism
 

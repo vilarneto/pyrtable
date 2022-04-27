@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import collections.abc
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Optional, Union, Type, List, Iterator, Iterable, Any
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Optional, Type, Union
 
-from pyrtable._baseandtable import _BaseAndTableProtocol, BaseAndTable
+from pyrtable._baseandtable import BaseAndTable, _BaseAndTableProtocol
 from pyrtable.fields import BaseField
-
 
 if TYPE_CHECKING:
     from pyrtable.record import BaseRecord

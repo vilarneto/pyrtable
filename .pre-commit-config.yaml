@@ -16,3 +16,10 @@ repos:
         pass_filenames: false
         entry: dephell deps convert
         files: ^(pyproject.toml|poetry.lock)$
+  - repo: https://github.com/pycqa/isort
+    rev: 5.10.1
+    hooks:
+      - id: isort
+        name: isort (python)
+        entry: isort
+        files: ^src/.*\.py$
