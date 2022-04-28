@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import collections.abc
 from abc import ABCMeta
-from typing import TYPE_CHECKING, Optional, Union, Type, List, Iterator, Iterable, Any
+from typing import TYPE_CHECKING, Any, Iterable, Iterator, List, Optional, Type, Union
 
-from pyrtable._baseandtable import _BaseAndTableProtocol, BaseAndTable
+from pyrtable._baseandtable import BaseAndTable, BaseAndTableProtocol
 from pyrtable.fields import BaseField
-
 
 if TYPE_CHECKING:
     from pyrtable.record import BaseRecord
@@ -20,7 +19,7 @@ class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
                  *args, **kwargs):
         from pyrtable.record import BaseRecord
 
-        def fetcher(linked_record_id: str, *, base_and_table: '_BaseAndTableProtocol') -> BaseRecord:
+        def fetcher(linked_record_id: str, *, base_and_table: 'BaseAndTableProtocol') -> BaseRecord:
             nonlocal linked_class
 
             if isinstance(linked_class, str):
@@ -31,10 +30,10 @@ class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
                 linked_class = getattr(module, class_name)
 
             query = linked_class.objects
-            if base_and_table.base_id is not None:
-                query = query.set_base_id(base_and_table.base_id)
-            if base_and_table.table_id is not None:
-                query = query.set_table_id(base_and_table.table_id)
+            if base_and_table.get_base_id() is not None:
+                query = query.set_base_id(base_and_table.get_base_id())
+            if base_and_table.get_table_id() is not None:
+                query = query.set_table_id(base_and_table.get_table_id())
             return query.get(record_id=linked_record_id)
 
         self._linked_class = linked_class
@@ -52,11 +51,13 @@ class BaseRecordLinkField(BaseField, metaclass=ABCMeta):
 
         return self._linked_class
 
-    def get_linked_base_and_table(self) -> '_BaseAndTableProtocol':
+    def get_linked_base_and_table(self) -> 'BaseAndTableProtocol':
         from pyrtable._baseandtable import BaseAndTable
 
         linked_class = self.get_linked_class()
+        # noinspection PyProtectedMember
         base_id = linked_class._get_meta_attr('base_id', None)
+        # noinspection PyProtectedMember
         table_id = linked_class._get_meta_attr('table_id', None)
         return BaseAndTable(base_id, table_id)
 
@@ -67,12 +68,12 @@ class _RecordLink(BaseAndTable):
     _fetcher = None
 
     def __init__(self, *,
-                 base_and_table: '_BaseAndTableProtocol',
+                 base_and_table: 'BaseAndTableProtocol',
                  other: Optional[_RecordLink] = None,
                  record_id: Optional[str] = None,
                  record: Optional[BaseRecord] = None,
                  fetcher=None):
-        super().__init__(base_id=base_and_table.base_id, table_id=base_and_table.table_id)
+        super().__init__(base_id=base_and_table.get_base_id(), table_id=base_and_table.get_table_id())
 
         if other is not None:
             self._id = other._id
@@ -148,7 +149,7 @@ class SingleRecordLinkField(BaseRecordLinkField):
         value = super().__get__(instance, owner)
         return value.record if value is not None else None
 
-    def validate(self, value: Optional[Union[_RecordLink, Iterable[Any]]], base_and_table: '_BaseAndTableProtocol') \
+    def validate(self, value: Optional[Union[_RecordLink, Iterable[Any]]], base_and_table: 'BaseAndTableProtocol') \
             -> Any:
         from pyrtable.record import BaseRecord
 
@@ -165,7 +166,7 @@ class SingleRecordLinkField(BaseRecordLinkField):
             return None
         return _RecordLink(base_and_table=value, other=value)
 
-    def decode_from_airtable(self, value: Optional[List[str]], base_and_table: '_BaseAndTableProtocol') \
+    def decode_from_airtable(self, value: Optional[List[str]], base_and_table: 'BaseAndTableProtocol') \
             -> Optional[_RecordLink]:
         if not value:
             return None
@@ -174,8 +175,8 @@ class SingleRecordLinkField(BaseRecordLinkField):
 
         # Propagates the base_id of the referencing record
         linked_base_and_table = BaseAndTable(
-            base_id=base_and_table.base_id,
-            table_id=self.get_linked_base_and_table().table_id)
+            base_id=base_and_table.get_base_id(),
+            table_id=self.get_linked_base_and_table().get_table_id())
 
         return _RecordLink(base_and_table=linked_base_and_table, record_id=value[0], fetcher=self._fetcher)
 
@@ -190,10 +191,10 @@ class _RecordLinkCollection(BaseAndTable, collections.abc.Collection):
     _fetcher = None
 
     def __init__(self, *,
-                 base_and_table: '_BaseAndTableProtocol',
+                 base_and_table: 'BaseAndTableProtocol',
                  other: Optional[_RecordLinkCollection] = None,
                  fetcher=None):
-        super(_RecordLinkCollection, self).__init__(base_id=base_and_table.base_id, table_id=base_and_table.table_id)
+        super(_RecordLinkCollection, self).__init__(base_id=base_and_table.get_base_id(), table_id=base_and_table.get_table_id())
 
         self._items = []
 
@@ -302,7 +303,7 @@ class MultipleRecordLinkField(BaseRecordLinkField):
 
     def validate(self,
                  value: Optional[Union[_RecordLinkCollection, Iterable[Any]]],
-                 base_and_table: '_BaseAndTableProtocol') -> Any:
+                 base_and_table: 'BaseAndTableProtocol') -> Any:
         if isinstance(value, _RecordLinkCollection):
             linked_base_and_table = self.get_linked_base_and_table()
             linked_base_and_table.ensure_base_and_table_match(value)
@@ -318,7 +319,7 @@ class MultipleRecordLinkField(BaseRecordLinkField):
     def clone_value(self, value: _RecordLinkCollection) -> _RecordLinkCollection:
         return _RecordLinkCollection(base_and_table=self.get_linked_base_and_table(), other=value)
 
-    def decode_from_airtable(self, value: Optional[List[str]], base_and_table: '_BaseAndTableProtocol') \
+    def decode_from_airtable(self, value: Optional[List[str]], base_and_table: 'BaseAndTableProtocol') \
             -> _RecordLinkCollection:
         result = _RecordLinkCollection(base_and_table=self.get_linked_base_and_table(), fetcher=self._fetcher)
         for record_id in value or []:

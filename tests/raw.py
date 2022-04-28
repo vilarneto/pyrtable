@@ -1,8 +1,8 @@
 import datetime
 import unittest
 
-from pyrtable.fields import IntegerField, FloatField, StringField, BooleanField, DateField, DateTimeField,\
-    MultipleSelectionField
+from pyrtable.fields import BooleanField, DateField, DateTimeField, FloatField, IntegerField, MultipleSelectionField, \
+    StringField
 from pyrtable.filters.raw import *
 from pyrtable.filterutils import quote_value
 from pyrtable.record import BaseRecord

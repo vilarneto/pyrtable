@@ -1,27 +1,30 @@
 import datetime
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
-
 if TYPE_CHECKING:
-    from pyrtable._baseandtable import _BaseAndTableProtocol
+    from pyrtable._baseandtable import BaseAndTableProtocol
 
 
 try:
-    import pytz
+    import zoneinfo
 except ImportError:
-    pytz = None
+    try:
+        # noinspection PyPackageRequirements
+        from backports import zoneinfo
+    except ImportError:
+        zoneinfo = None
 
 from pyrtable.fields import BaseField
 
 
 class StringField(BaseField):
-    def decode_from_airtable(self, value: Optional[str], base_and_table: '_BaseAndTableProtocol') -> str:
+    def decode_from_airtable(self, value: Optional[str], base_and_table: 'BaseAndTableProtocol') -> str:
         return value or ''
 
     def encode_to_airtable(self, value: Optional[str]) -> Optional[str]:
         return value or None
 
-    def validate(self, value: Optional[str], base_and_table: '_BaseAndTableProtocol') -> str:
+    def validate(self, value: Optional[str], base_and_table: 'BaseAndTableProtocol') -> str:
         return value or ''
 
 
@@ -29,7 +32,7 @@ class IntegerField(BaseField):
     def decode_from_airtable(
             self,
             value: Optional[Union[int, Dict]],
-            base_and_table: '_BaseAndTableProtocol') -> Optional[int]:
+            base_and_table: 'BaseAndTableProtocol') -> Optional[int]:
         if value is None:
             return None
         elif isinstance(value, dict):
@@ -46,7 +49,7 @@ class FloatField(BaseField):
     def decode_from_airtable(
             self,
             value: Optional[Union[float, Dict]],
-            base_and_table: '_BaseAndTableProtocol') -> Optional[float]:
+            base_and_table: 'BaseAndTableProtocol') -> Optional[float]:
         if value is None:
             return None
         elif isinstance(value, dict):
@@ -61,7 +64,7 @@ class FloatField(BaseField):
 
 
 class BooleanField(BaseField):
-    def decode_from_airtable(self, value: Optional[bool], base_and_table: '_BaseAndTableProtocol') -> bool:
+    def decode_from_airtable(self, value: Optional[bool], base_and_table: 'BaseAndTableProtocol') -> bool:
         return bool(value)
 
     def encode_to_airtable(self, value: bool) -> Optional[bool]:
@@ -69,7 +72,7 @@ class BooleanField(BaseField):
 
 
 class DateField(BaseField):
-    def decode_from_airtable(self, value: Optional[str], base_and_table: '_BaseAndTableProtocol') \
+    def decode_from_airtable(self, value: Optional[str], base_and_table: 'BaseAndTableProtocol') \
             -> Optional[datetime.date]:
         if not value:
             return None
@@ -82,23 +85,24 @@ class DateField(BaseField):
 
 
 class DateTimeField(BaseField):
-    def decode_from_airtable(self, value, base_and_table: '_BaseAndTableProtocol'):
+    def decode_from_airtable(self, value, base_and_table: 'BaseAndTableProtocol'):
         if not value:
             return None
         timestamp = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%fZ')
-        if pytz is not None:
-            timestamp = pytz.UTC.localize(timestamp)
+        if zoneinfo is not None:
+            timestamp = timestamp.replace(tzinfo=zoneinfo.ZoneInfo('UTC'))
         return timestamp
 
     def encode_to_airtable(self, value):
         if value is None:
             return None
 
-        if pytz is not None:
-            value = value.astimezone(pytz.UTC)
+        if zoneinfo is not None:
+            value = value.astimezone(zoneinfo.ZoneInfo('UTC'))
         elif value.tzinfo is not None:
-            import sys
-            print('Warning: Using timezone-aware datetime values require the pytz package', file=sys.stderr)
+            import logging
+            logger = logging.getLogger('pyrtable')
+            logger.warning('Usage of timezone-aware datetimes requires the zoneinfo or backports.zoneinfo package')
 
         return format(value, '%Y-%m-%dT%H:%M:%S.%fZ')
 

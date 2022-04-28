@@ -2,7 +2,6 @@ import os
 import threading
 from typing import List, Optional
 
-
 config_dirs: Optional[List[str]] = None
 config_dirs_lock = threading.Lock()
 

@@ -1,8 +1,7 @@
 import collections.abc
-from typing import TYPE_CHECKING, Generic, Iterable, Iterator, TypeVar, Type, Optional
+from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type, TypeVar
 
-from ._baseandtable import _BaseAndTableSettableProtocol, BaseAndTable
-
+from ._baseandtable import BaseAndTableMethodsMixin
 
 if TYPE_CHECKING:
     from .filters.base import BaseFilter
@@ -13,12 +12,18 @@ RT = TypeVar('RT', bound='BaseRecord')
 QT = TypeVar('QT', bound='RecordQuery')
 
 
-class RecordQuery(BaseAndTable, Generic[RT, QT], Iterable[RT],
-                  collections.abc.Iterable, _BaseAndTableSettableProtocol):
+class RecordQuery(BaseAndTableMethodsMixin, Generic[RT, QT], Iterable[RT], collections.abc.Iterable):
     """
-    A (potentially under construction) query for records in a table. Also represents the starting point for queries
-    to be made over a :class:`BaseRecord` derived class, exposed through the `objects` class attribute.
+    A (possibly incomplete) query for records in a table. Also represents the starting point for queries to be made over
+    a :class:`BaseRecord` derived class, exposed through the `objects` class attribute.
     """
+
+    def get_base_id(self) -> Optional[str]:
+        return self._get_record_class().get_class_base_id() if self._base_id is None else self._base_id
+
+    def get_table_id(self) -> Optional[str]:
+        return self._get_record_class().get_class_table_id() if self._table_id is None else self._table_id
+
     def set_base_id(self, base_id: str) -> 'QT':
         """
         Change the query's base ID.
@@ -39,14 +44,15 @@ class RecordQuery(BaseAndTable, Generic[RT, QT], Iterable[RT],
         result._table_id = table_id
         return result
 
-    _record_class: Type['BaseRecord']
+    _base_id: Optional[str] = None
+    _table_id: Optional[str] = None
+    _record_class: Optional[Type['BaseRecord']] = None
     _initialised = False
     _is_empty_query = False
 
-    def __init__(self, record_class: Type['BaseRecord'], flt: Optional['BaseFilter'] = None):
-        super().__init__(base_id=record_class.get_class_base_id(), table_id=record_class.get_class_table_id())
+    def __init__(self, flt: Optional['BaseFilter'] = None):
+        super().__init__()
 
-        self._record_class = record_class
         self._filter = flt
 
     def _shallow_copy(self) -> QT:
@@ -121,7 +127,14 @@ class RecordQuery(BaseAndTable, Generic[RT, QT], Iterable[RT],
             raise ValueError('Currently get() is not compatible with filters applied')
 
         return get_default_context().fetch_single(
-            record_cls=self._record_class, record_id=record_id, base_and_table=self)
+            record_cls=self._get_record_class(), record_id=record_id, base_and_table=self)
+
+    def _get_record_class(self) -> Type['BaseRecord']:
+        if self._record_class is None:
+            raise AttributeError(
+                'Record class is not set. RecordQuery objects are to be used only as class properties of BaseRecord'
+                ' subclasses.')
+        return self._record_class
 
     def __iter__(self) -> Iterator[RT]:
         if not self._initialised:
@@ -132,7 +145,7 @@ class RecordQuery(BaseAndTable, Generic[RT, QT], Iterable[RT],
 
         from pyrtable.context import get_default_context
         yield from get_default_context().fetch_many(
-            record_cls=self._record_class, base_and_table=self, record_filter=self._filter)
+            record_cls=self._get_record_class(), base_and_table=self, record_filter=self._filter)
 
 
 __all__ = ['RecordQuery']

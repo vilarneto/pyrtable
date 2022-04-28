@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Optional, Any, Callable, Type
-
+from typing import TYPE_CHECKING, Any, Callable, Optional, Type
 
 if TYPE_CHECKING:
-    from pyrtable._baseandtable import _BaseAndTableProtocol
+    from pyrtable._baseandtable import BaseAndTableProtocol
     from pyrtable.record import BaseRecord
 
 
@@ -61,7 +60,7 @@ class BaseField:
     def is_same_value(cls, lhs, rhs) -> bool:
         return lhs == rhs
 
-    def validate(self, value: Any, base_and_table: '_BaseAndTableProtocol') -> Any:
+    def validate(self, value: Any, base_and_table: 'BaseAndTableProtocol') -> Any:
         """Validate the value before storing it.
 
         Validation means changing the value to appropriate form (e.g., making sure it's converted to a specific class or
@@ -75,7 +74,7 @@ class BaseField:
         """
         return value
 
-    def decode_from_airtable(self, value, base_and_table: '_BaseAndTableProtocol'):
+    def decode_from_airtable(self, value, base_and_table: 'BaseAndTableProtocol'):
         """
         Decode a field value retrieved through Airtable JSON API into the corresponding Python value.
 

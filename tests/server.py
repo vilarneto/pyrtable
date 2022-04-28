@@ -5,7 +5,6 @@ from typing import Optional
 from pyrtable.fields import StringField
 from pyrtable.record import BaseRecord
 
-
 api_key: Optional[str]
 base_id: Optional[str]
 table_id: Optional[str]

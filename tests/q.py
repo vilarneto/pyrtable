@@ -1,6 +1,6 @@
 import unittest
 
-from pyrtable.fields import IntegerField, FloatField, StringField, MultipleSelectionField
+from pyrtable.fields import FloatField, IntegerField, MultipleSelectionField, StringField
 from pyrtable.filters import Q
 from pyrtable.record import BaseRecord
 

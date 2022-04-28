@@ -2,8 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 from enum import Enum
-from typing import TypeVar, MutableSet, Iterator, Callable, Optional, Union, Any, Type, Generic, Iterable
-
+from typing import Any, Callable, Generic, Iterable, Iterator, MutableSet, Optional, Type, TypeVar, Union
 
 T = TypeVar('T')
 T_co = TypeVar('T_co', covariant=True)

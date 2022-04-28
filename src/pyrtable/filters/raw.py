@@ -1,7 +1,6 @@
-from typing import Type, List, Any, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, List, Type
 
 from .base import BaseFilter
-
 
 if TYPE_CHECKING:
     from pyrtable.record import BaseRecord
@@ -87,8 +86,8 @@ class OrFilter(BaseFilter):
 
 class EqualsFilter(BaseFilter):
     def build_formula(self, record_class: Type['BaseRecord']) -> str:
-        from pyrtable.filterutils import quote_column_name, airtable_filter_equals
         from pyrtable.fields import BooleanField
+        from pyrtable.filterutils import airtable_filter_equals, quote_column_name
 
         field = self.get_field_object(record_class, self.attr_name)
 

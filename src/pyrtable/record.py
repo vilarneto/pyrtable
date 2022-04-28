@@ -1,10 +1,9 @@
 import datetime
 import re
-from typing import TYPE_CHECKING, Type, Iterator, Optional, Dict, Any, Union, List, Callable, Tuple, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Dict, Iterator, List, Optional, Protocol, Tuple
 
-from ._baseandtable import _BaseAndTableSettableMixin
+from ._baseandtable import BaseAndTableMethodsMixin, BaseAndTableProtocol
 from .query import RecordQuery
-
 
 try:
     import simplejson as json
@@ -12,12 +11,15 @@ except ImportError:
     import json
 
 try:
-    import pytz
+    import zoneinfo
 except ImportError:
-    pytz = None
+    try:
+        # noinspection PyPackageRequirements
+        from backports import zoneinfo
+    except ImportError:
+        zoneinfo = None
 
 from pyrtable.fields import BaseField
-
 
 if TYPE_CHECKING:
     pass
@@ -62,27 +64,32 @@ class _BaseRecordProtocol(Protocol):
         api_key: str
         base_id: str
         table_id: str
-        record_query_class: Type['RecordQuery']
 
         get_api_key: Callable[[], str]
         get_base_id: Callable[[], str]
         get_table_id: Callable[[], str]
-        get_record_query_class: Callable[[], Type['RecordQuery']]
 
 
-class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
+class BaseRecord(BaseAndTableProtocol, BaseAndTableMethodsMixin, _BaseRecordProtocol):
     """
     Base class for all table records.
     """
+
+    def get_base_id(self) -> Optional[str]:
+        return self.get_class_base_id() if self._base_id is None else self._base_id
+
+    def get_table_id(self) -> Optional[str]:
+        return self.get_class_table_id() if self._table_id is None else self._table_id
+
     _ATTRIBUTE_NOT_SPECIFIED = object()
 
-    _id: Optional[str] = None
     _base_id: Optional[str] = None
     _table_id: Optional[str] = None
+    _id: Optional[str] = None
     _created_timestamp: Optional[datetime.datetime] = None
 
     meta = _MetaManager()
-    objects: RecordQuery
+    objects = RecordQuery()
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__()
@@ -91,9 +98,34 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
             # noinspection PyProtectedMember
             field._install_extra_properties(cls, attr_name)
 
-        record_query_cls = cls._get_meta_attr('record_query_class', RecordQuery)
-        record_query = record_query_cls(record_class=cls)
-        cls.objects = record_query
+        for attr_name, record_query in cls._iter_record_query_attrs():
+            # noinspection PyProtectedMember
+            if record_query._record_class is None:
+                record_query._record_class = cls
+            elif record_query._record_class is not cls:
+                import copy
+                record_query = copy.copy(record_query)
+                record_query._record_class = cls
+                setattr(cls, attr_name, record_query)
+
+        # Check deprecated mechanism
+        record_query_cls = cls._get_meta_attr('record_query_class', None)
+        if record_query_cls is not None:
+            import logging
+            logger = logging.getLogger('pyrtable')
+            logger.warning('record_query_class meta attributes are deprecated and will be ignored.')
+
+    @classmethod
+    def _iter_record_query_attrs(cls) -> Iterator[Tuple[str, RecordQuery]]:
+        yielded_attrs = set()
+        yielded_attr_names = set()
+
+        for current_cls in cls.__mro__:
+            for attr_name, attr in list(current_cls.__dict__.items()):
+                if isinstance(attr, RecordQuery) and attr not in yielded_attrs and attr_name not in yielded_attr_names:
+                    yielded_attrs.add(attr)
+                    yielded_attr_names.add(attr_name)
+                    yield attr_name, attr
 
     @classmethod
     def iter_fields(cls) -> Iterator[Tuple[str, BaseField]]:
@@ -128,7 +160,10 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
         return instance
 
     def __init__(self, _base_id: Optional[str] = None, _table_id: Optional[str] = None, **kwargs):
-        super().__init__(base_id=_base_id, table_id=_table_id, record_cls=type(self))
+        super().__init__()
+
+        self._base_id = _base_id
+        self._table_id = _table_id
         self._fields_values = {}
         self._orig_fields_values = {}
 
@@ -146,11 +181,15 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
             self._orig_fields_values[attr_name] = field.clone_value(self._fields_values[attr_name])
 
     def consume_airtable_data(self, data: Dict[str, Any]):
+        """
+        Update field values of this record from a dictionary of raw data retrieved from the Airtable server.
+        """
+
         data = dict(data)
         self._id = data.pop('id')
         self._created_timestamp = datetime.datetime.strptime(data.pop('createdTime'), '%Y-%m-%dT%H:%M:%S.%fZ')
-        if pytz is not None:
-            self._created_timestamp = pytz.UTC.localize(self._created_timestamp)
+        if zoneinfo is not None:
+            self._created_timestamp = self._created_timestamp.replace(tzinfo=zoneinfo.ZoneInfo('UTC'))
 
         fields_values: Dict[str, Any] = data.pop('fields')
 
@@ -172,19 +211,29 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
 
     def delete(self) -> None:
         """
-        Delete the record from Airtable.
+        Delete this record from Airtable.
         """
+
         from pyrtable.context import get_default_context
         get_default_context().delete(self.__class__, self)
 
     def save(self) -> None:
         """
-        Save the record to Airtable.
+        Save this record to Airtable.
         """
+
         from pyrtable.context import get_default_context
         get_default_context().save(self.__class__, self)
 
     def encode_to_airtable(self, include_non_dirty_fields=False) -> Dict[str, Any]:
+        """
+        Build a dictionary of field values ready to be sent to creation/update at the Airtable server.
+
+        :param include_non_dirty_fields: If `True` then all fields will be included in the dictionary; if `False` then
+         only fields changed from the last server operation are included (possibly resulting in an empty dictionary).
+        :result: The dictionary of raw field values.
+        """
+
         result = {}
 
         for attr_name, field in self.iter_fields():
@@ -274,7 +323,7 @@ class BaseRecord(_BaseAndTableSettableMixin, _BaseRecordProtocol):
             if base_id is None:
                 raise ValueError('Cannot find a default Airtable API Key')
             else:
-                raise ValueError('Cannot find an Airtable API Key for base_id=%s' % base_id)
+                raise KeyError('Cannot find an Airtable API Key for base_id=%s' % base_id)
 
         return api_key
 
@@ -310,8 +359,9 @@ class APIKeyFromSecretsFileMixin:
 
     @classmethod
     def get_api_key(cls, base_id: str):
-        from pyrtable.configutils import load_config_file
         import os
+
+        from pyrtable.configutils import load_config_file
 
         airtable_secrets_filename = os.getenv('AIRTABLE_SECRETS_FILENAME')
         if not airtable_secrets_filename:
@@ -327,7 +377,7 @@ class TableIDFromClassNameMixin:
         if not issubclass(cls, BaseRecord):
             raise AttributeError('This is a mixin for BaseRecord subclasses')
 
-        # Respect Meta.table_id if defined
+        # Respect Meta.get_table_id() if defined
         table_id = cls._get_meta_attr('table_id', None)
         if table_id is not None:
             return table_id
