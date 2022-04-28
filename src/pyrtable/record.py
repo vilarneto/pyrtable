@@ -11,9 +11,13 @@ except ImportError:
     import json
 
 try:
-    import pytz
+    import zoneinfo
 except ImportError:
-    pytz = None
+    try:
+        # noinspection PyPackageRequirements
+        from backports import zoneinfo
+    except ImportError:
+        zoneinfo = None
 
 from pyrtable.fields import BaseField
 
@@ -161,8 +165,8 @@ class BaseRecord(_MutableBaseAndTableMixin, _BaseRecordProtocol):
         data = dict(data)
         self._id = data.pop('id')
         self._created_timestamp = datetime.datetime.strptime(data.pop('createdTime'), '%Y-%m-%dT%H:%M:%S.%fZ')
-        if pytz is not None:
-            self._created_timestamp = pytz.UTC.localize(self._created_timestamp)
+        if zoneinfo is not None:
+            self._created_timestamp = self._created_timestamp.replace(tzinfo=zoneinfo.ZoneInfo('UTC'))
 
         fields_values: Dict[str, Any] = data.pop('fields')
 

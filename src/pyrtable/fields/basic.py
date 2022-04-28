@@ -6,9 +6,13 @@ if TYPE_CHECKING:
 
 
 try:
-    import pytz
+    import zoneinfo
 except ImportError:
-    pytz = None
+    try:
+        # noinspection PyPackageRequirements
+        from backports import zoneinfo
+    except ImportError:
+        zoneinfo = None
 
 from pyrtable.fields import BaseField
 
@@ -85,19 +89,20 @@ class DateTimeField(BaseField):
         if not value:
             return None
         timestamp = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%fZ')
-        if pytz is not None:
-            timestamp = pytz.UTC.localize(timestamp)
+        if zoneinfo is not None:
+            timestamp = timestamp.replace(tzinfo=zoneinfo.ZoneInfo('UTC'))
         return timestamp
 
     def encode_to_airtable(self, value):
         if value is None:
             return None
 
-        if pytz is not None:
-            value = value.astimezone(pytz.UTC)
+        if zoneinfo is not None:
+            value = value.astimezone(zoneinfo.ZoneInfo('UTC'))
         elif value.tzinfo is not None:
-            import sys
-            print('Warning: Using timezone-aware datetime values require the pytz package', file=sys.stderr)
+            import logging
+            logger = logging.getLogger('pyrtable')
+            logger.warning('Usage of timezone-aware datetimes requires the zoneinfo or backports.zoneinfo package')
 
         return format(value, '%Y-%m-%dT%H:%M:%S.%fZ')
 

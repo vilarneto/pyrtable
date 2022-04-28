@@ -147,7 +147,7 @@ Holds a :py:class:`datetime.date` value.
 
 .. class:: class DateTimeField(field_name, **options)
 
-Holds a :py:class:`datetime.datetime` value. If `the pytz package <https://pypi.org/project/pytz/>`_ is installed, values will be timezone aware.
+Holds a :py:class:`datetime.datetime` value. In Python 3.9+ (or if `the backports.zoneinfo package <https://pypi.org/project/backports.zoneinfo/>`_ is installed in older Python versions), values will be timezone aware.
 
 .. _FloatField:
 .. index::
