@@ -1,8 +1,5 @@
 import abc
-from typing import TYPE_CHECKING, Optional, Protocol, Type
-
-if TYPE_CHECKING:
-    from .record import BaseRecord
+from typing import Optional, Protocol
 
 
 def encode_table_id(table_id: str) -> str:
@@ -10,86 +7,78 @@ def encode_table_id(table_id: str) -> str:
     return urllib.parse.quote(table_id)
 
 
-class _BaseAndTableProtocol(Protocol, metaclass=abc.ABCMeta):
-    _API_ROOT_URL = 'https://api.airtable.com/v0'
+class BaseAndTableProtocol(Protocol):
+    """
+    Protocol for classes that support base_id and table_id getters and basic read-only methods.
+    """
 
-    @property
-    @abc.abstractmethod
-    def base_id(self) -> Optional[str]:
+    def get_base_id(self) -> Optional[str]:
         ...
 
-    @property
+    def get_table_id(self) -> Optional[str]:
+        ...
+
+    def build_url(self, record_id: Optional[str] = None) -> str:
+        ...
+
+    def ensure_base_and_table_match(self, other: 'BaseAndTableProtocol'):
+        ...
+
+    def _validate_base_table_ids(self) -> None:
+        ...
+
+
+class MutableBaseAndTableProtocol(BaseAndTableProtocol):
+    """
+    Protocol for classes that support base_id and table_id getters & setters and basic read-only methods.
+    """
+
+    def set_base_id(self, base_id: str) -> 'MutableBaseAndTableProtocol':
+        ...
+
+    def set_table_id(self, table_id: str) -> 'MutableBaseAndTableProtocol':
+        ...
+
+
+class BaseAndTableMethodsMixin(metaclass=abc.ABCMeta):
+    """
+    Default implementations for :class:`BaseAndTableProtocol` methods.
+    """
+
+    _API_ROOT_URL = 'https://api.airtable.com/v0'
+
     @abc.abstractmethod
-    def table_id(self) -> Optional[str]:
+    def get_base_id(self) -> Optional[str]:
+        ...
+
+    @abc.abstractmethod
+    def get_table_id(self) -> Optional[str]:
         ...
 
     def build_url(self, record_id: Optional[str] = None) -> str:
         self._validate_base_table_ids()
 
-        url = '%s/%s/%s' % (self._API_ROOT_URL, self.base_id, encode_table_id(self.table_id))
+        url = '%s/%s/%s' % (self._API_ROOT_URL, self.get_base_id(), encode_table_id(self.get_table_id()))
         if record_id is not None:
             url += '/%s' % record_id
         return url
 
-    def ensure_base_and_table_match(self, other: '_BaseAndTableProtocol'):
-        if self.base_id is not None and other.base_id is not None and self.base_id != other.base_id:
+    def ensure_base_and_table_match(self, other: 'BaseAndTableProtocol'):
+        if self.get_base_id() is not None and other.get_base_id() is not None \
+                and self.get_base_id() != other.get_base_id():
             raise ValueError('Base IDs do not match')
-        if self.table_id is not None and other.table_id is not None and self.table_id != other.table_id:
+        if self.get_table_id() is not None and other.get_table_id() is not None \
+                and self.get_table_id() != other.get_table_id():
             raise ValueError('Table IDs do not match')
 
     def _validate_base_table_ids(self) -> None:
-        if self.base_id is None:
+        if self.get_base_id() is None:
             raise ValueError('Base ID is not set')
-        if self.table_id is None:
+        if self.get_table_id() is None:
             raise ValueError('Table ID is not set')
 
 
-class _MutableBaseAndTableProtocol(_BaseAndTableProtocol, metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def set_base_id(self, base_id: str) -> '_MutableBaseAndTableMixin':
-        ...
-
-    @abc.abstractmethod
-    def set_table_id(self, table_id: str) -> '_MutableBaseAndTableMixin':
-        ...
-
-
-class _MutableBaseAndTableMixin(_MutableBaseAndTableProtocol):
-    def set_base_id(self, base_id: str) -> '_MutableBaseAndTableMixin':
-        self._base_id = base_id
-        return self
-
-    def set_table_id(self, table_id: str) -> '_MutableBaseAndTableMixin':
-        self._table_id = table_id
-        return self
-
-    @property
-    def base_id(self) -> Optional[str]:
-        return self._base_id
-
-    @property
-    def table_id(self) -> Optional[str]:
-        return self._table_id
-
-    _base_id: Optional[str]
-    _table_id: Optional[str]
-
-    def __init__(self,
-                 record_cls: Optional[Type['BaseRecord']] = None,
-                 base_id: Optional[str] = None,
-                 table_id: Optional[str] = None,
-                 *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self._base_id = base_id
-        if self._base_id is None and record_cls is not None:
-            self._base_id = record_cls.get_class_base_id()
-        self._table_id = table_id
-        if self._table_id is None and record_cls is not None:
-            self._table_id = record_cls.get_class_table_id()
-
-
-class BaseAndTable(_BaseAndTableProtocol):
+class BaseAndTable(BaseAndTableMethodsMixin):
     _base_id: Optional[str]
     _table_id: Optional[str]
 
@@ -97,16 +86,14 @@ class BaseAndTable(_BaseAndTableProtocol):
         self._base_id = base_id
         self._table_id = table_id
 
-    @property
-    def base_id(self) -> Optional[str]:
+    def get_base_id(self) -> Optional[str]:
         return self._base_id
 
-    @property
-    def table_id(self) -> Optional[str]:
+    def get_table_id(self) -> Optional[str]:
         return self._table_id
 
     def __repr__(self):
         return '%s(base_id=%r, table_id=%r)' % (self.__class__.__name__, self._base_id, self._table_id)
 
 
-__all__ = ['_BaseAndTableProtocol', '_MutableBaseAndTableProtocol', '_MutableBaseAndTableMixin', 'BaseAndTable']
+__all__ = ['BaseAndTableProtocol', 'MutableBaseAndTableProtocol', 'BaseAndTableMethodsMixin', 'BaseAndTable']

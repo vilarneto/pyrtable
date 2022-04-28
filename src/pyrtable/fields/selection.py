@@ -8,7 +8,7 @@ from .base import BaseField
 from .valueset import ValueSet, validator_from_enum
 
 if TYPE_CHECKING:
-    from pyrtable._baseandtable import _BaseAndTableProtocol
+    from pyrtable._baseandtable import BaseAndTableProtocol
 
 
 class _AbstractSelectionField(BaseField, ABC):
@@ -34,7 +34,7 @@ class _AbstractSelectionField(BaseField, ABC):
 
 
 class SingleSelectionField(_AbstractSelectionField):
-    def decode_from_airtable(self, value: Optional[str], base_and_table: '_BaseAndTableProtocol') -> Optional[Any]:
+    def decode_from_airtable(self, value: Optional[str], base_and_table: 'BaseAndTableProtocol') -> Optional[Any]:
         return self._raw_to_value.get(value, value)
 
     def encode_to_airtable(self, value: Optional[Any]) -> Optional[str]:
@@ -52,7 +52,7 @@ class MultipleSelectionField(_AbstractSelectionField):
     def clone_value(self, value: ValueSet) -> ValueSet:
         return ValueSet(value)
 
-    def decode_from_airtable(self, value: Optional[List[str]], base_and_table: '_BaseAndTableProtocol') -> ValueSet:
+    def decode_from_airtable(self, value: Optional[List[str]], base_and_table: 'BaseAndTableProtocol') -> ValueSet:
         if value is not None:
             value = [self._raw_to_value.get(item, item) for item in value]
         return self.validate(value, base_and_table=base_and_table)
@@ -62,7 +62,7 @@ class MultipleSelectionField(_AbstractSelectionField):
             return None
         return [self._value_to_raw.get(item, item) for item in value]
 
-    def validate(self, value: Optional[Iterable[Any]], base_and_table: '_BaseAndTableProtocol') -> ValueSet:
+    def validate(self, value: Optional[Iterable[Any]], base_and_table: 'BaseAndTableProtocol') -> ValueSet:
         value_set = self._create_value_set()
         if value is not None:
             value_set.set(value)

@@ -9,7 +9,7 @@ except ImportError:
 
 
 if TYPE_CHECKING:
-    from pyrtable._baseandtable import _BaseAndTableProtocol
+    from pyrtable._baseandtable import BaseAndTableProtocol
     from pyrtable.filters.base import BaseFilter
     from pyrtable.query import RecordQuery
     from pyrtable.record import BaseRecord
@@ -20,13 +20,13 @@ class BaseContext:
     def fetch_single(self, *,
                      record_cls: Type['BaseRecord'],
                      record_id: str,
-                     base_and_table: '_BaseAndTableProtocol') \
+                     base_and_table: 'BaseAndTableProtocol') \
             -> 'BaseRecord':
         import requests
 
         from pyrtable.connectionmanager import get_connection_manager
 
-        headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
+        headers = record_cls.get_request_headers(base_id=base_and_table.get_base_id())
         url = base_and_table.build_url(record_id=record_id)
 
         with get_connection_manager():
@@ -43,13 +43,13 @@ class BaseContext:
                 raise RequestError(message=error_message, type=error_type)
 
         record_data = response.json()
-        record = record_cls(_base_id=base_and_table.base_id, _table_id=base_and_table.table_id)
+        record = record_cls(_base_id=base_and_table.get_base_id(), _table_id=base_and_table.get_table_id())
         record.consume_airtable_data(record_data)
         return record
 
     def fetch_many(self, *,
                    record_cls: Type['BaseRecord'],
-                   base_and_table: '_BaseAndTableProtocol',
+                   base_and_table: 'BaseAndTableProtocol',
                    record_filter: Optional['BaseFilter'] = None) \
             -> Iterator['BaseRecord']:
         import urllib.parse
@@ -58,7 +58,7 @@ class BaseContext:
 
         from pyrtable.connectionmanager import get_connection_manager
 
-        headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
+        headers = record_cls.get_request_headers(base_id=base_and_table.get_base_id())
         url = base_and_table.build_url()
         parsed_url = urllib.parse.urlparse(url)
         url_query_params = urllib.parse.parse_qsl(parsed_url.query, keep_blank_values=True)
@@ -86,7 +86,7 @@ class BaseContext:
 
             response_json = response.json()
             for record_data in response_json.get('records', []):
-                record = record_cls(_base_id=base_and_table.base_id, _table_id=base_and_table.table_id)
+                record = record_cls(_base_id=base_and_table.get_base_id(), _table_id=base_and_table.get_table_id())
                 record.consume_airtable_data(record_data)
                 yield record
 
@@ -110,7 +110,7 @@ class BaseContext:
         url = record.build_url()
         headers = record_cls.get_request_headers({
             'Content-Type': 'application/json',
-        }, base_id=record.base_id)
+        }, base_id=record.get_base_id())
         data = {'fields': record.encode_to_airtable()}
 
         with get_connection_manager():
@@ -138,7 +138,7 @@ class BaseContext:
         url = record.build_url(record_id=record.id)
         headers = record_cls.get_request_headers({
             'Content-Type': 'application/json',
-        }, base_id=record.base_id)
+        }, base_id=record.get_base_id())
         data = {'fields': dirty_fields}
 
         with get_connection_manager():
@@ -167,13 +167,13 @@ class BaseContext:
     def delete_id(self, *,
                   record_cls: Type['BaseRecord'],
                   record_id: str,
-                  base_and_table: '_BaseAndTableProtocol') -> None:
+                  base_and_table: 'BaseAndTableProtocol') -> None:
         import requests
 
         from pyrtable.connectionmanager import get_connection_manager
 
         url = base_and_table.build_url(record_id=record_id)
-        headers = record_cls.get_request_headers(base_id=base_and_table.base_id)
+        headers = record_cls.get_request_headers(base_id=base_and_table.get_base_id())
 
         with get_connection_manager():
             response = requests.delete(url, headers=headers)
@@ -203,10 +203,10 @@ class BaseContext:
 
 class SimpleCachingContext(BaseContext):
     @staticmethod
-    def _build_key(record_cls: Type['BaseRecord'], base_and_table: '_BaseAndTableProtocol', record_id: str) -> str:
+    def _build_key(record_cls: Type['BaseRecord'], base_and_table: 'BaseAndTableProtocol', record_id: str) -> str:
         # noinspection PyProtectedMember
         base_and_table._validate_base_table_ids()
-        return '%s:%s:%s' % (record_cls.__name__, base_and_table.base_id, record_id)
+        return '%s:%s:%s' % (record_cls.__name__, base_and_table.get_base_id(), record_id)
 
     _cache: Dict[str, 'BaseRecord']
 
@@ -249,7 +249,7 @@ class SimpleCachingContext(BaseContext):
     def fetch_single(self, *,
                      record_cls: Type['BaseRecord'],
                      record_id: str,
-                     base_and_table: '_BaseAndTableProtocol') -> 'BaseRecord':
+                     base_and_table: 'BaseAndTableProtocol') -> 'BaseRecord':
         if not self._is_cached_class(record_cls):
             return super(SimpleCachingContext, self).fetch_single(
                 record_cls=record_cls, record_id=record_id, base_and_table=base_and_table)
@@ -268,7 +268,7 @@ class SimpleCachingContext(BaseContext):
 
     def fetch_many(self, *,
                    record_cls: Type['BaseRecord'],
-                   base_and_table: '_BaseAndTableProtocol',
+                   base_and_table: 'BaseAndTableProtocol',
                    record_filter: Optional['BaseFilter'] = None) -> Iterator['BaseRecord']:
         for record in super(SimpleCachingContext, self).fetch_many(
                 record_cls=record_cls, base_and_table=base_and_table, record_filter=record_filter):
@@ -286,7 +286,7 @@ class SimpleCachingContext(BaseContext):
     def delete_id(self, *,
                   record_cls: Type['BaseRecord'],
                   record_id: str,
-                  base_and_table: '_BaseAndTableProtocol') -> None:
+                  base_and_table: 'BaseAndTableProtocol') -> None:
         if self._is_cached_class(record_cls):
             with self._cache_lock:
                 self._cache.pop(self._build_key(record_cls, base_and_table, record_id), None)

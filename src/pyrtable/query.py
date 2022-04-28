@@ -1,7 +1,7 @@
 import collections.abc
 from typing import TYPE_CHECKING, Generic, Iterable, Iterator, Optional, Type, TypeVar
 
-from ._baseandtable import _MutableBaseAndTableProtocol
+from ._baseandtable import BaseAndTableMethodsMixin
 
 if TYPE_CHECKING:
     from .filters.base import BaseFilter
@@ -12,18 +12,16 @@ RT = TypeVar('RT', bound='BaseRecord')
 QT = TypeVar('QT', bound='RecordQuery')
 
 
-class RecordQuery(_MutableBaseAndTableProtocol, Generic[RT, QT], Iterable[RT], collections.abc.Iterable):
+class RecordQuery(BaseAndTableMethodsMixin, Generic[RT, QT], Iterable[RT], collections.abc.Iterable):
     """
     A (possibly incomplete) query for records in a table. Also represents the starting point for queries to be made over
     a :class:`BaseRecord` derived class, exposed through the `objects` class attribute.
     """
 
-    @property
-    def base_id(self) -> Optional[str]:
+    def get_base_id(self) -> Optional[str]:
         return self._get_record_class().get_class_base_id() if self._base_id is None else self._base_id
 
-    @property
-    def table_id(self) -> Optional[str]:
+    def get_table_id(self) -> Optional[str]:
         return self._get_record_class().get_class_table_id() if self._table_id is None else self._table_id
 
     def set_base_id(self, base_id: str) -> 'QT':

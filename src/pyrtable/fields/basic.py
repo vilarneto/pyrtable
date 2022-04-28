@@ -2,7 +2,7 @@ import datetime
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
 if TYPE_CHECKING:
-    from pyrtable._baseandtable import _BaseAndTableProtocol
+    from pyrtable._baseandtable import BaseAndTableProtocol
 
 
 try:
@@ -18,13 +18,13 @@ from pyrtable.fields import BaseField
 
 
 class StringField(BaseField):
-    def decode_from_airtable(self, value: Optional[str], base_and_table: '_BaseAndTableProtocol') -> str:
+    def decode_from_airtable(self, value: Optional[str], base_and_table: 'BaseAndTableProtocol') -> str:
         return value or ''
 
     def encode_to_airtable(self, value: Optional[str]) -> Optional[str]:
         return value or None
 
-    def validate(self, value: Optional[str], base_and_table: '_BaseAndTableProtocol') -> str:
+    def validate(self, value: Optional[str], base_and_table: 'BaseAndTableProtocol') -> str:
         return value or ''
 
 
@@ -32,7 +32,7 @@ class IntegerField(BaseField):
     def decode_from_airtable(
             self,
             value: Optional[Union[int, Dict]],
-            base_and_table: '_BaseAndTableProtocol') -> Optional[int]:
+            base_and_table: 'BaseAndTableProtocol') -> Optional[int]:
         if value is None:
             return None
         elif isinstance(value, dict):
@@ -49,7 +49,7 @@ class FloatField(BaseField):
     def decode_from_airtable(
             self,
             value: Optional[Union[float, Dict]],
-            base_and_table: '_BaseAndTableProtocol') -> Optional[float]:
+            base_and_table: 'BaseAndTableProtocol') -> Optional[float]:
         if value is None:
             return None
         elif isinstance(value, dict):
@@ -64,7 +64,7 @@ class FloatField(BaseField):
 
 
 class BooleanField(BaseField):
-    def decode_from_airtable(self, value: Optional[bool], base_and_table: '_BaseAndTableProtocol') -> bool:
+    def decode_from_airtable(self, value: Optional[bool], base_and_table: 'BaseAndTableProtocol') -> bool:
         return bool(value)
 
     def encode_to_airtable(self, value: bool) -> Optional[bool]:
@@ -72,7 +72,7 @@ class BooleanField(BaseField):
 
 
 class DateField(BaseField):
-    def decode_from_airtable(self, value: Optional[str], base_and_table: '_BaseAndTableProtocol') \
+    def decode_from_airtable(self, value: Optional[str], base_and_table: 'BaseAndTableProtocol') \
             -> Optional[datetime.date]:
         if not value:
             return None
@@ -85,7 +85,7 @@ class DateField(BaseField):
 
 
 class DateTimeField(BaseField):
-    def decode_from_airtable(self, value, base_and_table: '_BaseAndTableProtocol'):
+    def decode_from_airtable(self, value, base_and_table: 'BaseAndTableProtocol'):
         if not value:
             return None
         timestamp = datetime.datetime.strptime(value, '%Y-%m-%dT%H:%M:%S.%fZ')
