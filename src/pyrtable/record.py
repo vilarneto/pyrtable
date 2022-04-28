@@ -118,11 +118,13 @@ class BaseRecord(BaseAndTableProtocol, BaseAndTableMethodsMixin, _BaseRecordProt
     @classmethod
     def _iter_record_query_attrs(cls) -> Iterator[Tuple[str, RecordQuery]]:
         yielded_attrs = set()
+        yielded_attr_names = set()
 
         for current_cls in cls.__mro__:
             for attr_name, attr in list(current_cls.__dict__.items()):
-                if isinstance(attr, RecordQuery) and attr not in yielded_attrs:
+                if isinstance(attr, RecordQuery) and attr not in yielded_attrs and attr_name not in yielded_attr_names:
                     yielded_attrs.add(attr)
+                    yielded_attr_names.add(attr_name)
                     yield attr_name, attr
 
     @classmethod
