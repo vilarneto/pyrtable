@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pyrtable"
-version = "0.10.0"
+version = "0.10.1"
 description = "Django-inspired library to interface with Airtable"
 authors = ["Vilar da Camara Neto <vilarneto@gmail.com>"]
 license = "MIT"
