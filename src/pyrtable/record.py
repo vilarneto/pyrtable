@@ -70,7 +70,7 @@ class _BaseRecordProtocol(Protocol):
         get_table_id: Callable[[], str]
 
 
-class BaseRecord(BaseAndTableProtocol, BaseAndTableMethodsMixin, _BaseRecordProtocol):
+class BaseRecord(BaseAndTableMethodsMixin, _BaseRecordProtocol):
     """
     Base class for all table records.
     """
