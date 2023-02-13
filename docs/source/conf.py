@@ -23,7 +23,7 @@ copyright = '2020,2021,2022 by Vilar Fiuza da Camara Neto'
 author = 'Vilar Fiuza da Camara Neto'
 
 # The full version, including alpha/beta/rc tags
-release = '0.10.1'
+release = '0.10.2'
 
 
 # -- General configuration ---------------------------------------------------
