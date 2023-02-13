@@ -1,6 +1,7 @@
 .DS_Store
 **/.idea/
 *-secrets.json
+poetry.lock
 
 # Created by .ignore support plugin (hsz.mobi)
 ### Python template
